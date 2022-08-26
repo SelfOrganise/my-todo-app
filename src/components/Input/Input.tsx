@@ -29,16 +29,23 @@ export function Input() {
       },
       {
         async onSuccess() {
+          inputRef.current!.value = '';
           await invalidateQueries(['todos.all']);
         },
       }
     );
+
   }, [addTodo, parsedTime]);
 
   return (
     <div className="flex flex-col bg-blue-100 p-4 w-full">
-      <input type="text" ref={inputRef} />
-      <input type="text" value={timeString} onChange={e => setTimeString(e.target.value)} />
+      <input type="text" ref={inputRef} disabled={addTodo.isLoading} />
+      <input
+        type="text"
+        value={timeString}
+        disabled={addTodo.isLoading}
+        onChange={e => setTimeString(e.target.value)}
+      />
       {parsedTime?.format('YYYY/MM/DD HH:mm')} {parsedTime?.fromNow()}
       <button type="button" value="add" onClick={handleAdd}>
         Add

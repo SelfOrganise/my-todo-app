@@ -15,14 +15,23 @@ datasource db {
 }
 
 model Todo {
-  id            Int         @id @default(autoincrement())
-  content       String
-  done          Boolean?    @default(false)
-  createdAt     DateTime    @default(now())
-  modifiedAt    DateTime?
-  dueDate       DateTime?
+    id            String      @id @default(cuid())
+    content       String
+    done          Boolean?    @default(false)
+    createdAt     DateTime    @default(now())
+    modifiedAt    DateTime?
+    doneAt        DateTime?
+    dueDate       DateTime?
+    category      Category?   @relation(fields: [categoryId], references: [id])
+    categoryId    String?
 //  author        Account     @relation(fields: [authorId], references: [id])
 //  authorId      String
+}
+
+model Category {
+    id          String      @id @default(cuid())
+    title       String
+    todos       Todo[]
 }
 
 // Necessary for Next auth

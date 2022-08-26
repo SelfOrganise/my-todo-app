@@ -1,9 +1,7 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import { trpc } from '../utils/trpc';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import parseTimeString from 'timestring';
-import moment, { Moment } from 'moment';
+import moment from 'moment';
 import { Input } from '../components/Input';
 
 const Home: NextPage = () => {
@@ -21,7 +19,7 @@ const Home: NextPage = () => {
         {todos.data?.reverse().map(todo => (
           <div className="flex p-2 w-full" key={todo.id}>
             <div className="text-red-500 mr-2 ">{todo.content}</div>
-            {todo.dueDate && <div>{moment(todo.dueDate).fromNow()}</div>}
+            {todo.dueDate && <div className="text-blue-300">{moment(todo.dueDate).fromNow()}</div>}
           </div>
         ))}
       </main>
