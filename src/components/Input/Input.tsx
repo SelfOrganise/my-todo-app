@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import moment, { Moment } from 'moment/moment';
 import { trpc } from '../../utils/trpc';
 import parseTimeString from 'timestring';
+import { useHotkeys } from 'react-hotkeys-hook';
 
 export function Input() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -10,6 +11,7 @@ export function Input() {
   const addTodo = trpc.useMutation(['todos.add']);
   const { invalidateQueries } = trpc.useContext();
 
+  useEffect(() => inputRef.current?.focus(), []);
   useEffect(() => {
     if (!timeString) {
       return;
@@ -30,24 +32,41 @@ export function Input() {
       {
         async onSuccess() {
           inputRef.current!.value = '';
+          inputRef.current!.focus();
           await invalidateQueries(['todos.all']);
         },
       }
     );
+  }, [addTodo, invalidateQueries, parsedTime]);
 
-  }, [addTodo, parsedTime]);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleAdd();
+    }
+
+    if (e.key === 'Escape') {
+      e.currentTarget.blur();
+    }
+  };
+
+  useHotkeys('n', event => {
+    inputRef.current?.focus();
+    event.preventDefault();
+  });
 
   return (
     <div className="flex flex-col bg-blue-100 p-4 w-full">
-      <input type="text" ref={inputRef} disabled={addTodo.isLoading} />
+      <input autoFocus tabIndex={1} type="text" ref={inputRef} onKeyDown={handleKeyDown} />
       <input
+        tabIndex={2}
         type="text"
         value={timeString}
         disabled={addTodo.isLoading}
         onChange={e => setTimeString(e.target.value)}
+        onKeyDown={handleKeyDown}
       />
       {parsedTime?.format('YYYY/MM/DD HH:mm')} {parsedTime?.fromNow()}
-      <button type="button" value="add" onClick={handleAdd}>
+      <button tabIndex={3} type="button" value="add" onClick={handleAdd}>
         Add
       </button>
       {addTodo.isLoading && <span>adding...</span>}
