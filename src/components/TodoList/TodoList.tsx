@@ -7,6 +7,7 @@ import { trpc } from '../../utils/trpc';
 export function TodoList({ todos }: { todos?: Todo[] }) {
   const completeTask = trpc.useMutation(['todos.complete']);
   const undoTask = trpc.useMutation(['todos.undo']);
+  const updateTask = trpc.useMutation(['todos.update']);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const lastCompleted = useRef<Array<string>>([]);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -18,8 +19,8 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
     todos?.length,
   ]);
   useHotkeys('k', () => setSelectedIndex(old => Math.max(0, old - 1)), [todos?.length]);
+  useHotkeys('g', () => setSelectedIndex(0));
   useHotkeys('shift+g', () => setSelectedIndex(todos?.length ? todos.length - 1 : 0), [todos?.length]);
-  useHotkeys('g+g', () => setSelectedIndex(0));
   useHotkeys('/', event => {
     setShowSearch(true);
     event.preventDefault();
@@ -55,6 +56,12 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
     },
     [todos, selectedIndex]
   );
+  useHotkeys('e', () => {
+    const task = todos && todos[selectedIndex];
+    if (!task) {
+      return;
+    }
+  });
 
   return (
     <>
@@ -63,7 +70,11 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
         {todos?.map((todo, i) => (
           <div className={`flex p-2 w-full ${selectedIndex === i ? 'bg-amber-500' : ''}`} key={todo.id}>
             <div className="text-red-500 mr-2 ">{todo.content}</div>
-            {todo.dueDate && <div className="text-blue-300">{moment(todo.dueDate).fromNow()}</div>}
+            {todo.dueDate && (
+              <div className="text-blue-300">
+                {moment(todo.dueDate).toISOString()} - {moment(todo.dueDate).fromNow()}
+              </div>
+            )}
           </div>
         ))}
       </div>

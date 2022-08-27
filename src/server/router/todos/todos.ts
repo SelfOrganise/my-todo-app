@@ -9,8 +9,8 @@ export const todosRouter = createRouter()
           done: false,
         },
         orderBy: {
-          dueDate: 'desc'
-        }
+          dueDate: 'asc',
+        },
       });
     },
   })
@@ -58,6 +58,25 @@ export const todosRouter = createRouter()
           done: false,
           modifiedAt: new Date(),
           doneAt: null,
+        },
+      });
+    },
+  })
+  .mutation('update', {
+    input: z.object({
+      id: z.string(),
+      content: z.string(),
+      dueDate: z.date().nullish(),
+    }),
+    async resolve({ input, ctx }) {
+      return await ctx.prisma.todo.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          content: input.content,
+          modifiedAt: new Date(),
+          dueDate: input.dueDate,
         },
       });
     },
