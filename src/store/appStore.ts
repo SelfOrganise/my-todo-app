@@ -1,5 +1,11 @@
 import create from 'zustand';
+import type { Todo } from '@prisma/client';
 
-interface AppStore {}
+interface AppStore {
+  taskUnderEdit?: Todo;
+  setTaskUnderEdit: (task?: Todo) => void;
+}
 
-const useBearStore = create<AppStore>(set => ({}));
+export const useAppStore = create<AppStore>(set => ({
+  setTaskUnderEdit: (task?: Todo) => set({ taskUnderEdit: task }),
+}));

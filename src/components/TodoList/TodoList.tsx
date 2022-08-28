@@ -3,17 +3,17 @@ import moment from 'moment/moment';
 import { Todo } from '@prisma/client';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { trpc } from '../../utils/trpc';
+import { useAppStore } from '../../store/appStore';
 
 export function TodoList({ todos }: { todos?: Todo[] }) {
-  const completeTask = trpc.useMutation(['todos.complete']);
-  const undoTask = trpc.useMutation(['todos.undo']);
-  const updateTask = trpc.useMutation(['todos.update']);
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const lastCompleted = useRef<Array<string>>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const { invalidateQueries } = trpc.useContext();
-
+  const completeTask = trpc.useMutation(['todos.complete']);
+  const undoTask = trpc.useMutation(['todos.undo']);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
+  const setTaskUnderEdit = useAppStore(state => state.setTaskUnderEdit);
 
   useHotkeys('j', () => setSelectedIndex(old => Math.min(todos?.length ? todos.length - 1 : 0, old + 1)), [
     todos?.length,
@@ -56,12 +56,19 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
     },
     [todos, selectedIndex]
   );
-  useHotkeys('e', () => {
-    const task = todos && todos[selectedIndex];
-    if (!task) {
-      return;
-    }
-  });
+  useHotkeys(
+    'e',
+    (event) => {
+      const task = todos && todos[selectedIndex];
+      if (!task) {
+        return;
+      }
+
+      setTaskUnderEdit(task);
+      event.preventDefault();
+    },
+    [todos, selectedIndex, setTaskUnderEdit]
+  );
 
   return (
     <>
