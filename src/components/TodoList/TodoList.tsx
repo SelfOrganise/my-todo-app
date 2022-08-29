@@ -16,6 +16,7 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
   const [searchText, setSearchText] = useState('');
   const setTaskUnderEdit = useAppStore(state => state.setTaskUnderEdit);
   const currentTodos = searchText.length > 0 ? todos?.filter(e => e.content.includes(searchText)) : todos;
+  const [hideTodos, setHideTodos] = useState(false);
 
   useEffect(() => {
     listContainerRef.current?.focus();
@@ -27,6 +28,7 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
     [currentTodos?.length]
   );
   useHotkeys('k', () => setSelectedIndex(old => Math.max(0, old - 1)), []);
+  useHotkeys('h', () => setHideTodos(old => !old));
   useHotkeys('g', () => setSelectedIndex(0));
   useHotkeys('shift+g', () => setSelectedIndex(currentTodos?.length ? currentTodos.length - 1 : 0), [
     currentTodos?.length,
@@ -93,16 +95,18 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
         <input autoFocus={true} type="text" value={searchText} onChange={e => setSearchText(e.currentTarget.value)} />
       )}
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus">
-        {currentTodos?.map((todo, i) => (
-          <div className={`flex p-2 w-full ${selectedIndex === i ? 'bg-amber-500' : ''}`} key={todo.id}>
-            <div className="text-red-500 mr-2 ">{todo.content}</div>
-            {todo.dueDate && (
-              <div className="text-blue-300">
-                {moment(todo.dueDate).toISOString()} - {moment(todo.dueDate).fromNow()}
-              </div>
-            )}
-          </div>
-        ))}
+        {hideTodos && <p className="text-white text-5xl">Hidden</p>}
+        {!hideTodos &&
+          currentTodos?.map((todo, i) => (
+            <div className={`flex p-2 w-full ${selectedIndex === i ? 'bg-amber-500' : ''}`} key={todo.id}>
+              <div className="text-red-500 mr-2 ">{todo.content}</div>
+              {todo.dueDate && (
+                <div className="text-blue-300">
+                  {moment(todo.dueDate).toISOString()} - {moment(todo.dueDate).fromNow()}
+                </div>
+              )}
+            </div>
+          ))}
       </div>
     </>
   );
