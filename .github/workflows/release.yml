@@ -13,13 +13,7 @@ jobs:
       - run: ls
       - run: pwd
       - run: echo $GITHUB_WORKSPACE
-      - run: sshpass
-#      - name: Deploy 🚀
-#        uses: appleboy/scp-action@v0.1.2
-#        with:
-#          strip_components: 3
-#          host: ${{ secrets.HOST }}
-#          username: ${{ secrets.USERNAME }}
-#          password: ${{ secrets.PASSWORD }}
-#          port: ${{ secrets.PORT }}
-#          target: '/home/chores/todo'
+      - run: sshpass $PASSWORD rsync -avzh . $TARGET
+        env:
+          PASSWORD: ${{ secrets.PASSWORD }}
+          TARGET: ${{ secrets.RSYNC_TARGET }}
