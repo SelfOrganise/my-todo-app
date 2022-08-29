@@ -10,13 +10,15 @@ jobs:
     environment: upcloud
     steps:
       - uses: actions/checkout@v3
-      - name: Deploy 🚀
-        uses: appleboy/scp-action@v0.1.2
-        with:
-          strip_components: 3
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT }}
-          source: ${{ github.workspace }}
-          target: '/home/chores/todo'
+      - run: ls
+      - run: pwd
+#      - name: Deploy 🚀
+#        uses: appleboy/scp-action@v0.1.2
+#        with:
+#          strip_components: 3
+#          host: ${{ secrets.HOST }}
+#          username: ${{ secrets.USERNAME }}
+#          password: ${{ secrets.PASSWORD }}
+#          port: ${{ secrets.PORT }}
+#          source: ${{ github.workspace }}
+#          target: '/home/chores/todo'
