@@ -1,0 +1,29 @@
+name: 🖼️ Release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    environment: upcloud
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+          cache: 'yarn'
+      - run: yarn install --ignore-engines
+      - run: yarn build
+      - name: Deploy 🚀
+        uses: appleboy/scp-action@v0.1.2
+        with:
+          strip_components: 3
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          source: '.'
+          target: '/home/chores/todo'

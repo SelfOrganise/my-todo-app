@@ -28,7 +28,6 @@ export function Input() {
     }
   }, [taskUnderEdit]);
 
-  useEffect(() => inputRef.current?.focus(), []);
   useEffect(() => {
     if (!timeString) {
       return;
@@ -49,8 +48,8 @@ export function Input() {
         },
         {
           async onSuccess() {
+            inputRef.current?.blur();
             inputRef.current!.value = '';
-            inputRef.current!.focus();
             await invalidateQueries(['todos.all']);
             setShowInput(false);
           },
@@ -65,9 +64,9 @@ export function Input() {
         },
         {
           async onSuccess() {
+            inputRef.current?.blur();
             setTaskUnderEdit(undefined);
             inputRef.current!.value = '';
-            inputRef.current!.focus();
             await invalidateQueries(['todos.all']);
             setShowInput(false);
           },
@@ -106,14 +105,11 @@ export function Input() {
     >
       <textarea
         className="mb-4 bg-gray-50 text-2xl font-medium border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        autoFocus
-        tabIndex={1}
         ref={inputRef}
         onKeyDown={handleKeyDown}
       />
       <input
         className="bg-gray-50 border text-xl border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        tabIndex={2}
         type="text"
         value={timeString}
         disabled={addTodo.isLoading}

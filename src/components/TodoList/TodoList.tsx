@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import moment from 'moment/moment';
 import { Todo } from '@prisma/client';
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -7,39 +7,56 @@ import { useAppStore } from '../../store/appStore';
 
 export function TodoList({ todos }: { todos?: Todo[] }) {
   const lastCompleted = useRef<Array<string>>([]);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
   const { invalidateQueries } = trpc.useContext();
   const completeTask = trpc.useMutation(['todos.complete']);
   const undoTask = trpc.useMutation(['todos.undo']);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
+  const [searchText, setSearchText] = useState('');
   const setTaskUnderEdit = useAppStore(state => state.setTaskUnderEdit);
+  const currentTodos = searchText.length > 0 ? todos?.filter(e => e.content.includes(searchText)) : todos;
 
-  useHotkeys('j', () => setSelectedIndex(old => Math.min(todos?.length ? todos.length - 1 : 0, old + 1)), [
-    todos?.length,
-  ]);
-  useHotkeys('k', () => setSelectedIndex(old => Math.max(0, old - 1)), [todos?.length]);
+  useEffect(() => {
+    listContainerRef.current?.focus();
+  }, []);
+
+  useHotkeys(
+    'j',
+    () => setSelectedIndex(old => Math.min(currentTodos?.length ? currentTodos.length - 1 : 0, old + 1)),
+    [currentTodos?.length]
+  );
+  useHotkeys('k', () => setSelectedIndex(old => Math.max(0, old - 1)), []);
   useHotkeys('g', () => setSelectedIndex(0));
-  useHotkeys('shift+g', () => setSelectedIndex(todos?.length ? todos.length - 1 : 0), [todos?.length]);
+  useHotkeys('shift+g', () => setSelectedIndex(currentTodos?.length ? currentTodos.length - 1 : 0), [
+    currentTodos?.length,
+  ]);
   useHotkeys('/', event => {
     setShowSearch(true);
     event.preventDefault();
   });
-  useHotkeys('escape', () => setShowSearch(false), { enableOnTags: ['INPUT'] });
+  useHotkeys(
+    'escape',
+    () => {
+      setShowSearch(false);
+      setSearchText('');
+    },
+    { enableOnTags: ['INPUT'] }
+  );
   useHotkeys(
     'c',
     () =>
-      !!todos?.[selectedIndex]?.id &&
+      !!currentTodos?.[selectedIndex]?.id &&
       completeTask.mutate(
-        { id: todos[selectedIndex]!.id },
+        { id: currentTodos[selectedIndex]!.id },
         {
           onSuccess: async () => {
-            lastCompleted.current.push(todos[selectedIndex]!.id);
+            lastCompleted.current.push(currentTodos[selectedIndex]!.id);
             await invalidateQueries(['todos.all']);
           },
         }
       ),
-    [todos, selectedIndex]
+    [currentTodos, selectedIndex]
   );
   useHotkeys(
     'u',
@@ -54,12 +71,12 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
           }
         );
     },
-    [todos, selectedIndex]
+    [currentTodos, selectedIndex]
   );
   useHotkeys(
     'e',
-    (event) => {
-      const task = todos && todos[selectedIndex];
+    event => {
+      const task = currentTodos && currentTodos[selectedIndex];
       if (!task) {
         return;
       }
@@ -67,14 +84,16 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
       setTaskUnderEdit(task);
       event.preventDefault();
     },
-    [todos, selectedIndex, setTaskUnderEdit]
+    [currentTodos, selectedIndex, setTaskUnderEdit]
   );
 
   return (
     <>
-      {showSearch && <input autoFocus={true} type="text" ref={searchRef} />}
-      <div tabIndex={10}>
-        {todos?.map((todo, i) => (
+      {showSearch && (
+        <input autoFocus={true} type="text" value={searchText} onChange={e => setSearchText(e.currentTarget.value)} />
+      )}
+      <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus">
+        {currentTodos?.map((todo, i) => (
           <div className={`flex p-2 w-full ${selectedIndex === i ? 'bg-amber-500' : ''}`} key={todo.id}>
             <div className="text-red-500 mr-2 ">{todo.content}</div>
             {todo.dueDate && (
