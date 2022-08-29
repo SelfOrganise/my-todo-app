@@ -15,8 +15,6 @@ export function Input() {
   const [taskUnderEdit, setTaskUnderEdit] = useAppStore(state => [state.taskUnderEdit, state.setTaskUnderEdit]);
   const [showInput, setShowInput] = useState(false);
 
-  console.log(taskUnderEdit);
-
   useEffect(() => {
     if (taskUnderEdit && inputRef.current) {
       setShowInput(true);
@@ -99,8 +97,8 @@ export function Input() {
 
   return (
     <div
-      className={`flex flex-col bg-blue-100 p-4 w-full rounded-2xl fixed w-[50%] ${
-        showInput ? '' : 'fixed right-[-2000px]'
+      className={`flex flex-col bg-blue-100 p-4 w-full rounded-2xl fixed w-[50%] top-[15vh] ${
+        showInput ? '' : 'right-[-2000px] top-[5vh]'
       }`}
     >
       <textarea
