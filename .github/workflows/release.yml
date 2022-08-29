@@ -21,5 +21,5 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.PORT }}
-          source: ${{ github.workspace }}
+          source: '/home/runner/work/my-todo-app/my-todo-app'
           target: '/home/chores/todo'
