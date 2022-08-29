@@ -13,6 +13,7 @@ jobs:
       - run: ls
       - run: pwd
       - run: echo $GITHUB_WORKSPACE
+      - run: sshpass
       - run: sshpass $PASSWORD rsync -avzh . $TARGET
         env:
           PASSWORD: ${{ secrets.PASSWORD }}
