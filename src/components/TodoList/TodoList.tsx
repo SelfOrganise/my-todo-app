@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment/moment';
 import { Todo } from '@prisma/client';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
+import classNames from 'classnames';
 
 export function TodoList({ todos }: { todos?: Todo[] }) {
   const lastCompleted = useRef<Array<string>>([]);
@@ -15,7 +16,11 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
   const setTaskUnderEdit = useAppStore(state => state.setTaskUnderEdit);
-  const currentTodos = searchText.length > 0 ? todos?.filter(e => e.content.includes(searchText)) : todos;
+  const currentTodos = useMemo(() => {
+    return searchText.length > 0
+      ? todos?.sort(sortTodos).filter(e => e.content.includes(searchText))
+      : todos?.sort(sortTodos);
+  }, [searchText, todos]);
   const [hideTodos, setHideTodos] = useState(false);
 
   useEffect(() => {
@@ -94,20 +99,64 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
       {showSearch && (
         <input autoFocus={true} type="text" value={searchText} onChange={e => setSearchText(e.currentTarget.value)} />
       )}
-      <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus">
+      <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
         {hideTodos && <p className="text-white text-5xl">Hidden</p>}
         {!hideTodos &&
           currentTodos?.map((todo, i) => (
-            <div className={`flex p-2 w-full ${selectedIndex === i ? 'bg-amber-500' : ''}`} key={todo.id}>
-              <div className="text-red-500 mr-2 ">{todo.content}</div>
-              {todo.dueDate && (
-                <div className="text-blue-300">
-                  {moment(todo.dueDate).toISOString()} - {moment(todo.dueDate).fromNow()}
-                </div>
-              )}
+            <div
+              className={classNames(`flex justify-between p-4 mb-2 `, {
+                'outline-dotted outline-2 outline-green-400': selectedIndex === i,
+                // 'outline-dashed outline 1 outline-gray-400': selectedIndex !== i,
+                'bg-orange-700 bg-opacity-10': moment(todo.dueDate).isBefore(new Date()),
+              })}
+              key={todo.id}
+            >
+              <div className="text-red-500 mr-2 overflow-ellipsis overflow-hidden whitespace-nowrap">
+                {todo.content}
+              </div>
+              <div className="whitespace-pre">
+                {todo.dueDate && <div className="text-blue-300">{moment(todo.dueDate).fromNow()}</div>}
+              </div>
             </div>
           ))}
       </div>
     </>
   );
+}
+
+function sortTodos(a: Todo, b: Todo) {
+  const now = new Date().getTime();
+
+  if (a.dueDate && b.dueDate) {
+    if (a.dueDate.getTime() - now < 0 && b.dueDate.getTime() - now > 0) {
+      return 1;
+    }
+
+    if (b.dueDate.getTime() - now < 0 && a.dueDate.getTime() - now > 0) {
+      return -1;
+    }
+  }
+
+  if (a.dueDate && !b.dueDate) {
+    return -1;
+  }
+
+  if (!a.dueDate && b.dueDate) {
+    return 1;
+  }
+
+  // if (a.dueDate && b.dueDate) {
+  //
+  //   return a.dueDate.getTime() - b.dueDate.getTime();
+  // }
+
+  // if (!a.dueDate && b.dueDate) {
+  //   return Number.MAX_SAFE_INTEGER;
+  // }
+  //
+  // if (!b.dueDate && a.dueDate) {
+  //   return -Number.MAX_SAFE_INTEGER;
+  // }
+
+  return 0;
 }

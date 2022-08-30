@@ -74,6 +74,10 @@ export function Input() {
   }, [addTodo, invalidateQueries, parsedTime, setTaskUnderEdit, taskUnderEdit, updateTodo]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    if (e.shiftKey) {
+      return;
+    }
+
     if (e.key === 'Enter') {
       handleSave();
     }

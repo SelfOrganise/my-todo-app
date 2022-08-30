@@ -5,7 +5,11 @@ import { Input } from '../components/Input';
 import { TodoList } from '../components/TodoList';
 
 const Home: NextPage = () => {
-  const todos = trpc.useQuery(['todos.all']);
+  const todos = trpc.useQuery(['todos.all'], {
+    refetchInterval: 60000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+  });
 
   return (
     <>
