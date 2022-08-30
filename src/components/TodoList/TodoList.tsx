@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import moment from 'moment/moment';
 import { Todo } from '@prisma/client';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
-import classNames from 'classnames';
+import { TodoItem } from './TodoItem';
 
 export function TodoList({ todos }: { todos?: Todo[] }) {
   const lastCompleted = useRef<Array<string>>([]);
@@ -102,23 +101,7 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
         {hideTodos && <p className="text-white text-5xl">Hidden</p>}
         {!hideTodos &&
-          currentTodos?.map((todo, i) => (
-            <div
-              className={classNames(`flex justify-between p-4 mb-2 `, {
-                'outline-dotted outline-2 outline-green-400': selectedIndex === i,
-                // 'outline-dashed outline 1 outline-gray-400': selectedIndex !== i,
-                'bg-orange-700 bg-opacity-10': moment(todo.dueDate).isBefore(new Date()),
-              })}
-              key={todo.id}
-            >
-              <div className="text-red-500 mr-2 overflow-ellipsis overflow-hidden whitespace-nowrap">
-                {todo.content}
-              </div>
-              <div className="whitespace-pre">
-                {todo.dueDate && <div className="text-blue-300">{moment(todo.dueDate).fromNow()}</div>}
-              </div>
-            </div>
-          ))}
+          currentTodos?.map((todo, i) => <TodoItem key={todo.id} todo={todo} isSelected={selectedIndex === i} />)}
       </div>
     </>
   );

@@ -7,6 +7,7 @@ import { useAppStore } from '../../store/appStore';
 
 export function Input() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const timeRef = useRef<HTMLInputElement>(null);
   const [timeString, setTimeString] = useState('');
   const [parsedTime, setParsedTime] = useState<Moment | null>(null);
   const addTodo = trpc.useMutation(['todos.add']);
@@ -63,6 +64,7 @@ export function Input() {
         {
           async onSuccess() {
             inputRef.current?.blur();
+            timeRef.current?.blur();
             setTaskUnderEdit(undefined);
             inputRef.current!.value = '';
             await invalidateQueries(['todos.all']);
@@ -111,6 +113,7 @@ export function Input() {
         onKeyDown={handleKeyDown}
       />
       <input
+        ref={timeRef}
         className="bg-gray-50 border text-xl border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         type="text"
         value={timeString}
