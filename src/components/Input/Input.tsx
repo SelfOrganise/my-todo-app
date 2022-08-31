@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import moment, { Moment } from 'moment/moment';
 import { trpc } from '../../utils/trpc';
-import parseTimeString from 'timestring';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useAppStore } from '../../store/appStore';
+import { parseTimeString } from './parsetimeString';
 
 export function Input() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -33,8 +33,10 @@ export function Input() {
     }
 
     try {
-      const parsed = parseTimeString(timeString, 'minutes');
-      setParsedTime(moment().add(parsed, 'minutes'));
+      // const parsed = parseTimeString(timeString, 'minutes');
+      // setParsedTime(moment().add(parsed, 'minutes'));
+
+      setParsedTime(parseTimeString(timeString));
     } catch {}
   }, [timeString]);
 
@@ -103,18 +105,18 @@ export function Input() {
 
   return (
     <div
-      className={`flex flex-col bg-blue-100 p-4 w-full rounded-2xl fixed w-[50%] top-[15vh] ${
+      className={`flex flex-col bg-blue-100 p-4 w-full fixed w-[50%] top-[15vh] ${
         showInput ? '' : 'right-[-2000px] top-[5vh]'
       }`}
     >
       <textarea
-        className="mb-4 bg-gray-50 text-2xl font-medium border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        className="mb-4 bg-gray-50 text-2xl font-medium border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         ref={inputRef}
         onKeyDown={handleKeyDown}
       />
       <input
         ref={timeRef}
-        className="bg-gray-50 border text-xl border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        className="bg-gray-50 border text-xl border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         type="text"
         value={timeString}
         disabled={addTodo.isLoading}

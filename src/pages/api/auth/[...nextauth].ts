@@ -1,22 +1,41 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
-
-// Prisma adapter for NextAuth, optional and can be removed
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '../../../server/db/client';
 
 export const authOptions: NextAuthOptions = {
-  // Include user.id on session
+  providers: [
+    CredentialsProvider({
+      name: 'password',
+      credentials: {
+        email: { label: 'Email', type: 'text', placeholder: 'you@email.com' },
+        password: { label: 'Password', type: 'password', placeholder: '••••••' },
+      },
+      async authorize(options) {
+        return await prisma?.user.findFirst({
+          where: {
+            email: options?.email,
+            password: options?.password,
+          },
+        });
+      },
+    }),
+  ],
+  theme: {
+    colorScheme: 'dark',
+  },
+  session: {
+    maxAge: 3600, // token will expire after 1 hour
+  },
   callbacks: {
-    session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
-      }
+    async jwt({ token }) {
+      return token;
+    },
+    async session({ session, token }) {
+      session.user = { id: token.sub || 'invalid', email: token.email };
+
       return session;
     },
   },
-  // Configure one or more authentication providers
-  adapter: PrismaAdapter(prisma),
-  providers: [],
 };
 
 export default NextAuth(authOptions);

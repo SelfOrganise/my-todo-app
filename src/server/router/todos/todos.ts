@@ -1,12 +1,13 @@
-import { createRouter } from '../context';
 import { z } from 'zod';
+import { createProtectedRouter } from '../protected-router';
 
-export const todosRouter = createRouter()
+export const todosRouter = createProtectedRouter()
   .query('all', {
     async resolve({ ctx }) {
       return await ctx.prisma.todo.findMany({
         where: {
           done: false,
+          userId: ctx.session.user.id,
         },
         orderBy: {
           dueDate: 'asc',
@@ -22,6 +23,7 @@ export const todosRouter = createRouter()
     async resolve({ input, ctx }) {
       return await ctx.prisma.todo.create({
         data: {
+          userId: ctx.session.user.id,
           content: input.content,
           dueDate: input.dueDate,
         },
