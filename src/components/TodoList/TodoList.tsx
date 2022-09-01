@@ -16,9 +16,8 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
   const [searchText, setSearchText] = useState('');
   const setTaskUnderEdit = useAppStore(state => state.setTaskUnderEdit);
   const currentTodos = useMemo(() => {
-    return searchText.length > 0
-      ? todos?.sort(sortTodos).filter(e => e.content.includes(searchText))
-      : todos?.sort(sortTodos);
+    const sortedTodos = sortTodos(todos);
+    return searchText.length > 0 ? sortedTodos?.filter(e => e.content.includes(searchText)) : sortedTodos;
   }, [searchText, todos]);
   const [hideTodos, setHideTodos] = useState(false);
 
@@ -107,39 +106,28 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
   );
 }
 
-function sortTodos(a: Todo, b: Todo) {
-  const now = new Date().getTime();
+function sortTodos(todos?: Array<Todo>): Array<Todo> | undefined {
+  if (!todos) {
+    return todos;
+  }
 
-  if (a.dueDate && b.dueDate) {
-    if (a.dueDate.getTime() - now < 0 && b.dueDate.getTime() - now > 0) {
-      return 1;
+  const noDueDate = [];
+  const due = [];
+  const scheduled = [];
+
+  for (const todo of todos) {
+    if (!todo.dueDate) {
+      noDueDate.push(todo);
+    } else if (todo.dueDate.getTime() < Date.now()) {
+      due.push(todo);
+    } else {
+      scheduled.push(todo);
     }
-
-    if (b.dueDate.getTime() - now < 0 && a.dueDate.getTime() - now > 0) {
-      return -1;
-    }
   }
 
-  if (a.dueDate && !b.dueDate) {
-    return -1;
-  }
+  noDueDate.sort((a, b) => a.id.localeCompare(b.id));
+  due.sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
+  scheduled.sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
 
-  if (!a.dueDate && b.dueDate) {
-    return 1;
-  }
-
-  // if (a.dueDate && b.dueDate) {
-  //
-  //   return a.dueDate.getTime() - b.dueDate.getTime();
-  // }
-
-  // if (!a.dueDate && b.dueDate) {
-  //   return Number.MAX_SAFE_INTEGER;
-  // }
-  //
-  // if (!b.dueDate && a.dueDate) {
-  //   return -Number.MAX_SAFE_INTEGER;
-  // }
-
-  return 0;
+  return [...due, ...noDueDate, ...scheduled];
 }
