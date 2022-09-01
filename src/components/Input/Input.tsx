@@ -3,13 +3,13 @@ import moment, { Moment } from 'moment/moment';
 import { trpc } from '../../utils/trpc';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useAppStore } from '../../store/appStore';
-import { parseTimeString } from './parsetimeString';
+import { parseTimeString, Token } from './parsetimeString';
 
 export function Input() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const timeRef = useRef<HTMLInputElement>(null);
   const [timeString, setTimeString] = useState('');
-  const [parsedTime, setParsedTime] = useState<Moment | null>(null);
+  const [parsedData, setParsedData] = useState<[Moment, Array<Token>] | null>(null);
   const addTodo = trpc.useMutation(['todos.add']);
   const updateTodo = trpc.useMutation(['todos.update']);
   const { invalidateQueries } = trpc.useContext();
@@ -36,7 +36,7 @@ export function Input() {
       // const parsed = parseTimeString(timeString, 'minutes');
       // setParsedTime(moment().add(parsed, 'minutes'));
 
-      setParsedTime(parseTimeString(timeString));
+      setParsedData(parseTimeString(timeString));
     } catch {}
   }, [timeString]);
 
@@ -45,7 +45,7 @@ export function Input() {
       addTodo.mutate(
         {
           content: inputRef.current!.value,
-          dueDate: parsedTime?.toDate(),
+          dueDate: parsedData?.[0]?.toDate(),
         },
         {
           async onSuccess() {
@@ -61,7 +61,7 @@ export function Input() {
         {
           id: taskUnderEdit.id,
           content: inputRef.current!.value,
-          dueDate: parsedTime?.toDate(),
+          dueDate: parsedData?.[0]?.toDate(),
         },
         {
           async onSuccess() {
@@ -75,7 +75,7 @@ export function Input() {
         }
       );
     }
-  }, [addTodo, invalidateQueries, parsedTime, setTaskUnderEdit, taskUnderEdit, updateTodo]);
+  }, [addTodo, invalidateQueries, parsedData, setTaskUnderEdit, taskUnderEdit, updateTodo]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     if (e.shiftKey) {
@@ -123,7 +123,10 @@ export function Input() {
         onChange={e => setTimeString(e.target.value)}
         onKeyDown={handleKeyDown}
       />
-      {parsedTime?.format('YYYY/MM/DD HH:mm')} {parsedTime?.fromNow()}
+      {parsedData?.[0]?.format('YYYY/MM/DD HH:mm')} {parsedData?.[0]?.fromNow()}
+      {parsedData?.[1]?.map((e, i) => (
+        <span key={i}>{e.value}</span>
+      ))}
       {addTodo.isLoading && <span>adding...</span>}
     </div>
   );

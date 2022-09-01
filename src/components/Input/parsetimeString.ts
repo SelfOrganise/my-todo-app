@@ -5,88 +5,206 @@ export function parseTimeString(input?: string) {
   return parseTimeStringHelper(moment(), input);
 }
 
-function parseTimeStringHelper(result: Moment, input?: string): Moment | null {
-  if (!input) {
-    return result;
-  }
-
-  // starts with timestring (2d1h)
-  const [match, rest] = matchTimeString(input);
-  if (match) {
-    const minutes = safeTimeString(match);
-    result.add(minutes, 'minutes');
-
-    return parseTimeStringHelper(result, rest);
-  } else {
-    // starts with day of week
-    const dayOfWeekMatch = input.match(
-      /^(mon?d?a?y?|tue?s?d?a?y?|wed?n?e?s?d?a?y?|thu?r?s?d?a?y?|fri?d?a?y?|sat?u?r?d?a?y?|sun?d?a?y?)(.*)/i
-    );
-    if (dayOfWeekMatch) {
-      const dayOfWeek = dayOfWeekMatch[1];
-      const rest = dayOfWeekMatch[2]?.trim();
-
-      result.day(dayOfWeek!);
-
-      if (result.isBefore(moment())) {
-        result.add(1, 'week');
-      }
-
-      return parseTimeStringHelper(result, rest);
-    } else {
-      // is a time 9, 21, 9pm
-      if (input) {
-        const parsedTimeString = safeTimeString(input);
-        if (parsedTimeString) {
-          result.add(parsedTimeString, 'minutes');
-        } else {
-          const time = moment(input, ['H:ma']);
-          if (time.isValid()) {
-            result.hour(time.hour());
-            result.minute(time.minute());
-          }
-        }
-      }
-
-      if (result.isBefore(moment())) {
-        result.add(1, 'day');
-      }
-
-      return result;
-    }
-  }
-
-  // mon?
-  // tue?
-  // wed?
-  // thu?
-  // fri?
-  // sat?
-  // sun?
-  // 1w - +7 days
-  // 1mon - +30 days
-  //
+export interface Token {
+  value: string;
+  apply: (result: Moment) => void;
 }
 
-// eg: 2mon2w2d2h1m
-function matchTimeString(input: string): [string?, string?] {
-  // note: it's not possible in JS to capture repeating groups. We must enumerate each one individually
-  // support upto 5 groups (eg: 2mon2w2d2h1m)
-  const matchTimeString = input.match(
-    /^([0-9]+[wdhm])?([0-9]+[wdhm])?([0-9]+[wdhm])?([0-9]+[wdhm])([0-9]+[wdhm])?(.*)/
-  );
-  if (!matchTimeString) {
+class WeekDayToken implements Token {
+  value: string;
+
+  constructor(value: string) {
+    this.value = value;
+  }
+
+  apply(result: Moment) {
+    result.day(this.value);
+
+    if (result.isBefore(moment())) {
+      result.add(1, 'week');
+    }
+  }
+}
+
+class TimeToken implements Token {
+  value: string;
+  time: Moment;
+
+  constructor(value: string, parsed: Moment) {
+    this.value = value;
+    this.time = parsed;
+  }
+
+  apply(result: Moment) {
+    result.hour(this.time.hour());
+    result.minute(this.time.minute());
+
+    if (result.isBefore(moment())) {
+      result.add(1, 'day');
+    }
+  }
+}
+
+class TimeStringToken implements Token {
+  value: string;
+
+  constructor(value: string) {
+    this.value = value;
+  }
+
+  apply(result: Moment) {
+    const minutes = safeTimeString(this.value);
+
+    result.add(minutes, 'minutes');
+  }
+}
+
+interface TokenDefinition {
+  type: 'WeekDay' | 'timestring' | 'time';
+  match: (input: string) => Token | null;
+}
+
+const tokenDefinitions: Array<TokenDefinition> = [
+  {
+    type: 'WeekDay',
+    match: matchWeekDay,
+  },
+  {
+    type: 'time',
+    match: matchTime,
+  },
+  {
+    type: 'timestring',
+    match: matchTimeString,
+  },
+];
+
+function parseTimeStringHelper(result: Moment, input?: string): [Moment, Array<Token>] {
+  const tokens = getTokens(input);
+
+  for (const token of tokens) {
+    token.apply(result);
+  }
+
+  return [result, tokens];
+}
+
+function getTokens(input?: string): Array<Token> {
+  if (!input) {
     return [];
   }
 
-  const match = matchTimeString
-    .slice(1, -1) // skip first item because it's the input, skip last item because it's the rest of the string
-    .filter(s => s)
-    .join('');
+  const tokens = [];
+  let currentValue = input; // this gets sliced after every match
 
-  const rest = matchTimeString[matchTimeString.length - 1]?.trim();
+  while (currentValue) {
+    const match = matchToken(currentValue);
+    if (match) {
+      currentValue = currentValue.slice(match.value.length).trim();
+      tokens.push(match);
+    } else {
+      return tokens;
+    }
+  }
 
-  return [match, rest];
+  return tokens;
+}
+
+function matchToken(input: string): Token | null {
+  if (!input) {
+    return null;
+  }
+
+  for (const tokenDefinition of tokenDefinitions) {
+    const match = tokenDefinition.match(input);
+
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
+}
+
+export function matchTime(input: string): TimeToken | null {
+  const characters = input.split('');
+  const result: Array<string> = [];
+  for (let i = 0; i < characters.length; i++) {
+    const c = characters[i]!;
+    const lastCharacter = result[result.length - 1];
+
+    if (c === ' ') {
+      break;
+    }
+
+    if (lastCharacter && ['a', 'p'].includes(lastCharacter)) {
+      if (c === 'm') {
+        result.push(c);
+        break;
+      } else {
+        return null; // expected 'm' but got something else
+      }
+    }
+
+    if (lastCharacter && Number.isInteger(parseInt(lastCharacter)) && c === ':') {
+      result.push(c);
+      continue;
+    }
+
+    if (
+      lastCharacter &&
+      (Number.isInteger(parseInt(lastCharacter)) || lastCharacter === ':') &&
+      ['a', 'p'].includes(c)
+    ) {
+      result.push(c);
+      continue;
+    }
+
+    if (Number.isInteger(parseInt(c))) {
+      result.push(c);
+      continue;
+    }
+
+    return null;
+  }
+
+  const timeString = result.join('');
+  const parsedTimeString = moment(timeString, ['H:ma']);
+  if (parsedTimeString.isValid()) {
+    return new TimeToken(timeString, parsedTimeString);
+  }
+
+  return null;
+}
+
+function matchWeekDay(input: string): WeekDayToken | null {
+  const matches = input.match(
+    /^(mon?d?a?y?|tue?s?d?a?y?|wed?n?e?s?d?a?y?|thu?r?s?d?a?y?|fri?d?a?y?|sat?u?r?d?a?y?|sun?d?a?y?)/i
+  );
+
+  const match = matches?.[1];
+  if (match) {
+    return new WeekDayToken(match);
+  }
+
+  return null;
+}
+
+// eg: 2mon2w2d2h1m
+function matchTimeString(input: string): TimeStringToken | null {
+  // note: it's not possible in JS to capture repeating groups. We must enumerate each one individually
+  // support upto 5 groups (eg: 2mon2w2d2h1m)
+  const matchTimeString = input.match(/^([0-9]+[wdhm])?([0-9]+[wdhm])?([0-9]+[wdhm])?([0-9]+[wdhm])([0-9]+[wdhm])?/);
+  if (!matchTimeString) {
+    return null;
+  }
+
+  return new TimeStringToken(
+    matchTimeString
+      .slice(1, -1) // skip first item because it's the input, skip last item because it's the rest of the string
+      .filter(s => s)
+      .join('')
+  );
 }
 
 function safeTimeString(input: string): number | null {
