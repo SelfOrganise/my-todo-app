@@ -126,7 +126,7 @@ function sortTodos(todos?: Array<Todo>): Array<Todo> | undefined {
   }
 
   noDueDate.sort((a, b) => a.id.localeCompare(b.id));
-  due.sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
+  due.sort((a, b) => b.dueDate!.getTime() - a.dueDate!.getTime());
   scheduled.sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
 
   return [...due, ...noDueDate, ...scheduled];
