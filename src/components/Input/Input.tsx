@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import classNames from 'classnames';
 import moment, { Moment } from 'moment/moment';
 import { trpc } from '../../utils/trpc';
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -105,9 +106,9 @@ export function Input() {
 
   return (
     <div
-      className={`flex flex-col bg-blue-100 p-4 w-full fixed w-[50%] top-[15vh] ${
-        showInput ? '' : 'right-[-2000px] top-[5vh]'
-      }`}
+      className={classNames(`flex flex-col bg-blue-100 p-4 w-full fixed w-[50%] top-[15vh]`, {
+        'right-[-2000px] top-[5vh]': !showInput,
+      })}
     >
       <textarea
         className="mb-4 bg-gray-50 text-2xl font-medium border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"

@@ -5,6 +5,8 @@ import { Todo } from '@prisma/client';
 
 export function TodoItem({ todo, isSelected }: { todo: Todo; isSelected: boolean }): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
+  const parsedDueDate = moment(todo.dueDate);
+  const now = new Date();
 
   useEffect(() => {
     if (isSelected) {
@@ -15,16 +17,25 @@ export function TodoItem({ todo, isSelected }: { todo: Todo; isSelected: boolean
   return (
     <div
       ref={ref}
-      className={classNames(`flex justify-between p-4 mb-2 `, {
-        'outline-dotted outline-2 outline-green-400': isSelected,
+      className={classNames(`flex items-center justify-between p-2 mb-2 text-sm antialiased`, {
+        'outline-dashed outline-1 outline-green-400 rounded-sm': isSelected,
         // 'outline-dashed outline 1 outline-gray-400': selectedIndex !== i,
-        'bg-orange-700 bg-opacity-10': moment(todo.dueDate).isBefore(new Date()),
+        'text-red-500': parsedDueDate.isBefore(now),
+        'text-gray-300': parsedDueDate.isAfter(now),
+        'text-blue-300': !parsedDueDate.isValid(),
       })}
       key={todo.id}
     >
-      <div className="text-red-500 mr-2 overflow-ellipsis overflow-hidden whitespace-nowrap">{todo.content}</div>
-      <div className="whitespace-pre">
-        {todo.dueDate && <div className="text-blue-300">{moment(todo.dueDate).fromNow()}</div>}
+      <div
+        className={classNames('mr-2 ', {
+          'overflow-ellipsis overflow-hidden whitespace-nowrap': !isSelected,
+          'whitespace-pre': isSelected,
+        })}
+      >
+        {todo.content}
+      </div>
+      <div className="whitespace-pre text-xs h-full tracking-tight">
+        {todo.dueDate && <div>{moment(todo.dueDate).fromNow()}</div>}
       </div>
     </div>
   );
