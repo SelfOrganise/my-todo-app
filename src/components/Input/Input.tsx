@@ -106,18 +106,17 @@ export function Input() {
 
   return (
     <div
-      className={classNames(`flex flex-col bg-blue-100 p-4 w-full fixed w-[50%] top-[15vh]`, {
-        'right-[-2000px] top-[5vh]': !showInput,
-      })}
+      className={classNames(
+        `modal-box flex flex-col bg-base-300 shadow-xl p-4 w-full fixed w-[50%] top-[15vh] space-y-3`,
+        {
+          'right-[-2000px] top-[5vh]': !showInput,
+        }
+      )}
     >
-      <textarea
-        className="mb-4 bg-gray-50 text-2xl font-medium border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        ref={inputRef}
-        onKeyDown={handleKeyDown}
-      />
+      <textarea className="textarea h-40" ref={inputRef} onKeyDown={handleKeyDown} />
       <input
         ref={timeRef}
-        className="bg-gray-50 border text-xl border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        className="input"
         type="text"
         value={timeString}
         disabled={addTodo.isLoading}
