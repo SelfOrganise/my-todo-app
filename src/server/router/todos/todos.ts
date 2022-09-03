@@ -3,11 +3,15 @@ import { createProtectedRouter } from '../protected-router';
 
 export const todosRouter = createProtectedRouter()
   .query('all', {
-    async resolve({ ctx }) {
+    input: z.object({
+      categoryId: z.string().nullish(),
+    }),
+    async resolve({ input, ctx }) {
       return await ctx.prisma.todo.findMany({
         where: {
           done: false,
           userId: ctx.session.user.id,
+          categoryId: input.categoryId || null,
         },
         orderBy: {
           dueDate: 'asc',
@@ -18,6 +22,7 @@ export const todosRouter = createProtectedRouter()
   .mutation('add', {
     input: z.object({
       content: z.string(),
+      categoryId: z.string().nullish(),
       dueDate: z.date().nullish(),
     }),
     async resolve({ input, ctx }) {
@@ -26,6 +31,7 @@ export const todosRouter = createProtectedRouter()
           userId: ctx.session.user.id,
           content: input.content,
           dueDate: input.dueDate,
+          categoryId: input.categoryId,
         },
       });
     },

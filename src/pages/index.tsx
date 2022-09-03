@@ -1,16 +1,9 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import { trpc } from '../utils/trpc';
-import { Input } from '../components/Input';
-import { TodoList } from '../components/TodoList';
+import { AddTodo, TodoList, Categories } from '../components';
+import { AddCategory } from '../components/Categories/AddCategory';
 
 const Home: NextPage = () => {
-  const todos = trpc.useQuery(['todos.all'], {
-    refetchInterval: 60000,
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: 'always',
-  });
-
   return (
     <>
       <Head>
@@ -19,8 +12,10 @@ const Home: NextPage = () => {
       </Head>
 
       <main className="container mx-auto flex flex-col items-center justify-center p-4">
-        <Input />
-        <TodoList todos={todos.data} />
+        <Categories />
+        <AddCategory />
+        <AddTodo />
+        <TodoList />
       </main>
     </>
   );

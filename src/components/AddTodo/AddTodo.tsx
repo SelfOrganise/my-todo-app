@@ -5,8 +5,9 @@ import { trpc } from '../../utils/trpc';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useAppStore } from '../../store/appStore';
 import { parseTimeString, Token } from './parsetimeString';
+import shallow from 'zustand/shallow';
 
-export function Input() {
+export function AddTodo() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const timeRef = useRef<HTMLInputElement>(null);
   const [timeString, setTimeString] = useState('');
@@ -14,12 +15,16 @@ export function Input() {
   const addTodo = trpc.useMutation(['todos.add']);
   const updateTodo = trpc.useMutation(['todos.update']);
   const { invalidateQueries } = trpc.useContext();
-  const [taskUnderEdit, setTaskUnderEdit] = useAppStore(state => [state.taskUnderEdit, state.setTaskUnderEdit]);
-  const [showInput, setShowInput] = useState(false);
+  const [taskUnderEdit, setTaskUnderEdit] = useAppStore(
+    state => [state.taskUnderEdit, state.setTaskUnderEdit],
+    shallow
+  );
+  const currentCategoryId = useAppStore(state => state.currentCategoryId);
+  const [showAddTodo, setShowAddTodo] = useState(false);
 
   useEffect(() => {
     if (taskUnderEdit && inputRef.current) {
-      setShowInput(true);
+      setShowAddTodo(true);
       inputRef.current.value = taskUnderEdit.content;
       inputRef.current.focus();
       if (taskUnderEdit.dueDate) {
@@ -34,9 +39,6 @@ export function Input() {
     }
 
     try {
-      // const parsed = parseTimeString(timeString, 'minutes');
-      // setParsedTime(moment().add(parsed, 'minutes'));
-
       setParsedData(parseTimeString(timeString));
     } catch {}
   }, [timeString]);
@@ -47,13 +49,16 @@ export function Input() {
         {
           content: inputRef.current!.value,
           dueDate: parsedData?.[0]?.toDate(),
+          categoryId: currentCategoryId,
         },
         {
           async onSuccess() {
             inputRef.current?.blur();
             inputRef.current!.value = '';
-            await invalidateQueries(['todos.all']);
-            setShowInput(false);
+            setTimeString('');
+            setParsedData(null);
+            await invalidateQueries(['todos.all', { categoryId: currentCategoryId }]);
+            setShowAddTodo(false);
           },
         }
       );
@@ -68,10 +73,12 @@ export function Input() {
           async onSuccess() {
             inputRef.current?.blur();
             timeRef.current?.blur();
+            setTimeString('');
+            setParsedData(null);
             setTaskUnderEdit(undefined);
             inputRef.current!.value = '';
-            await invalidateQueries(['todos.all']);
-            setShowInput(false);
+            await invalidateQueries(['todos.all', { categoryId: currentCategoryId }]);
+            setShowAddTodo(false);
           },
         }
       );
@@ -90,8 +97,9 @@ export function Input() {
     if (e.key === 'Escape') {
       e.currentTarget.blur();
       setTimeString('');
+      setParsedData(null);
       setTaskUnderEdit(undefined);
-      setShowInput(false);
+      setShowAddTodo(false);
       if (inputRef.current) {
         inputRef.current.value = '';
       }
@@ -99,7 +107,7 @@ export function Input() {
   };
 
   useHotkeys('i', event => {
-    setShowInput(true);
+    setShowAddTodo(true);
     inputRef.current?.focus();
     event.preventDefault();
   });
@@ -109,11 +117,11 @@ export function Input() {
       className={classNames(
         `modal-box flex flex-col bg-base-300 shadow-xl p-4 w-full fixed w-[50%] top-[15vh] space-y-3`,
         {
-          'right-[-2000px] top-[5vh]': !showInput,
+          'right-[-2000px] top-[5vh]': !showAddTodo,
         }
       )}
     >
-      <textarea className="textarea h-40" ref={inputRef} onKeyDown={handleKeyDown} />
+      <textarea className="textarea h-40 text-2xl" ref={inputRef} onKeyDown={handleKeyDown} />
       <input
         ref={timeRef}
         className="input"

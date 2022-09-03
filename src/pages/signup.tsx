@@ -29,9 +29,9 @@ export default function SignUp(): JSX.Element {
           form.preventDefault();
         }}
       >
-        <input autoFocus type="text" name="email" placeholder="you@email.com" />
-        <input type="password" name="password" placeholder="*****" />
-        <input className="bg-gray-400 text-white" type="submit" value="create" />
+        <input className="input" autoFocus type="text" name="email" placeholder="you@email.com" />
+        <input className="input" type="password" name="password" placeholder="*****" />
+        <input className="btn bg-gray-600" type="submit" value="create" />
       </form>
     </div>
   );

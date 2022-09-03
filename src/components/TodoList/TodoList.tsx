@@ -5,7 +5,7 @@ import { trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
 import { TodoItem } from './TodoItem';
 
-export function TodoList({ todos }: { todos?: Todo[] }) {
+export function TodoList() {
   const lastCompleted = useRef<Array<string>>([]);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const { invalidateQueries } = trpc.useContext();
@@ -15,11 +15,21 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
   const setTaskUnderEdit = useAppStore(state => state.setTaskUnderEdit);
+  const currentCategoryId = useAppStore(state => state.currentCategoryId);
+  const [hideTodos, setHideTodos] = useState(false);
+
+  const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategoryId }], {
+    refetchInterval: 60000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+  });
+
+  const todos = todosQuery.data;
+
   const currentTodos = useMemo(() => {
     const sortedTodos = sortTodos(todos);
     return searchText.length > 0 ? sortedTodos?.filter(e => e.content.includes(searchText)) : sortedTodos;
   }, [searchText, todos]);
-  const [hideTodos, setHideTodos] = useState(false);
 
   useEffect(() => {
     listContainerRef.current?.focus();
@@ -95,12 +105,20 @@ export function TodoList({ todos }: { todos?: Todo[] }) {
   return (
     <>
       {showSearch && (
-        <input autoFocus={true} type="text" value={searchText} onChange={e => setSearchText(e.currentTarget.value)} />
+        <input
+          autoFocus={true}
+          className="input mb-4"
+          type="text"
+          value={searchText}
+          onChange={e => setSearchText(e.currentTarget.value)}
+        />
       )}
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
         {hideTodos && <p className="text-white text-5xl">Hidden</p>}
         {!hideTodos &&
-          currentTodos?.map((todo, i) => <TodoItem key={todo.id} todo={todo} isSelected={selectedIndex === i} />)}
+          currentTodos?.map((todo, i) => (
+            <TodoItem onClick={() => setSelectedIndex(i)} key={todo.id} todo={todo} isSelected={selectedIndex === i} />
+          ))}
       </div>
     </>
   );

@@ -3,7 +3,13 @@ import moment from 'moment';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Todo } from '@prisma/client';
 
-export function TodoItem({ todo, isSelected }: { todo: Todo; isSelected: boolean }): JSX.Element {
+interface TodoItemProps {
+  todo: Todo;
+  isSelected: boolean;
+  onClick?: () => void;
+}
+
+export function TodoItem({ todo, isSelected, onClick }: TodoItemProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   const parsedDueDate = moment(todo.dueDate);
   const now = new Date();
@@ -26,10 +32,10 @@ export function TodoItem({ todo, isSelected }: { todo: Todo; isSelected: boolean
 
   return (
     <div
+      onClick={onClick}
       ref={ref}
-      className={classNames(`flex items-center justify-between p-2 mb-2 text-sm antialiased`, {
+      className={classNames(`flex items-center justify-between p-2 mb-2 cursor-pointer`, {
         'outline-dashed outline-1 outline-green-400 rounded-sm': isSelected,
-        // 'outline-dashed outline 1 outline-gray-400': selectedIndex !== i,
         'text-red-500': parsedDueDate.isBefore(now),
         'text-gray-300': parsedDueDate.isAfter(now),
         'text-blue-300': !parsedDueDate.isValid(),
