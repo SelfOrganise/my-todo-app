@@ -1,13 +1,10 @@
 import { trpc } from '../../utils/trpc';
 import { FormEvent } from 'react';
 import { useAppStore } from '../../store/appStore';
+import shallow from "zustand/shallow";
 
-interface AddCategoryProps {
-  onFinished?: () => void;
-}
-
-export function AddCategory({ onFinished }: AddCategoryProps): JSX.Element | null {
-  const showAddCategory = useAppStore(state => state.showAddCategory);
+export function AddCategory(): JSX.Element | null {
+  const [showAddCategory, toggleAddCategory] = useAppStore(state => [state.showAddCategory, state.toggleAddCategory], shallow);
   const addCategory = trpc.useMutation('categories.create');
   const { invalidateQueries } = trpc.useContext();
 
@@ -25,8 +22,8 @@ export function AddCategory({ onFinished }: AddCategoryProps): JSX.Element | nul
           },
           {
             onSuccess: () => {
+              toggleAddCategory()
               invalidateQueries('categories.all');
-              onFinished && onFinished();
             },
             onError: res => {
               alert('Could not create category. ' + res.message);
