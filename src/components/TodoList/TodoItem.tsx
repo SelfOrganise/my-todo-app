@@ -37,8 +37,8 @@ export function TodoItem({ todo, isSelected, onClick }: TodoItemProps): JSX.Elem
       className={classNames(`flex items-center justify-between p-2 mb-2 cursor-pointer`, {
         'outline-dashed outline-1 outline-green-400 rounded-sm': isSelected,
         'text-red-500': parsedDueDate.isBefore(now),
-        'text-gray-300': parsedDueDate.isAfter(now),
-        'text-blue-300': !parsedDueDate.isValid(),
+        'text-sky-400': parsedDueDate.isAfter(now),
+        'text-gray-300': !parsedDueDate.isValid(),
       })}
       key={todo.id}
     >
@@ -54,7 +54,7 @@ export function TodoItem({ todo, isSelected, onClick }: TodoItemProps): JSX.Elem
         </div>
       </div>
       <div className="whitespace-pre text-xs h-full tracking-tight">
-        {todo.dueDate && <div>{moment(todo.dueDate).fromNow()}</div>}
+        {todo.dueDate && <div className="italic text-gray-500">{parsedDueDate.fromNow()}</div>}
       </div>
     </div>
   );

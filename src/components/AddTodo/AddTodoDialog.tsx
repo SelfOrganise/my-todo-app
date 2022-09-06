@@ -7,44 +7,67 @@ import { useAppStore } from '../../store/appStore';
 import { parseTimeString, Token } from './parsetimeString';
 import shallow from 'zustand/shallow';
 
-export function AddTodo() {
+export function AddTodoDialog() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const timeRef = useRef<HTMLInputElement>(null);
   const [timeString, setTimeString] = useState('');
-  const [parsedData, setParsedData] = useState<[Moment, Array<Token>] | null>(null);
+  const [parsedData, setParsedData] = useState<[Moment | null, Array<Token>] | null>(null);
   const addTodo = trpc.useMutation(['todos.add']);
   const updateTodo = trpc.useMutation(['todos.update']);
   const { invalidateQueries } = trpc.useContext();
-  const [taskUnderEdit, setTaskUnderEdit] = useAppStore(
-    state => [state.taskUnderEdit, state.setTaskUnderEdit],
+  const [taskUnderEdit, setTaskUnderEdit, setTaskToFocus] = useAppStore(
+    state => [state.taskUnderEdit, state.setTaskUnderEdit, state.setTaskToFocus],
     shallow
   );
   const currentCategoryId = useAppStore(state => state.currentCategoryId);
-  const [showAddTodo, setShowAddTodo] = useState(false);
+  const [showAddTodo, setShowAddTodo] = useAppStore(store => [store.showAddTodo, store.setShowAddTodo], shallow);
 
   useEffect(() => {
     if (taskUnderEdit && inputRef.current) {
       setShowAddTodo(true);
       inputRef.current.value = taskUnderEdit.content;
-      inputRef.current.focus();
       if (taskUnderEdit.dueDate) {
-        setTimeString(moment(taskUnderEdit.dueDate).toISOString());
+        const date = moment(taskUnderEdit.dueDate);
+        // note: editing an item keeps its original date (a bit of a workaround)
+        setTimeString(date.toISOString());
+        setParsedData([date, []]);
       }
     }
-  }, [taskUnderEdit]);
+  }, [setShowAddTodo, taskUnderEdit]);
 
+  // focus on show, clear on hide
   useEffect(() => {
-    if (!timeString) {
-      return;
+    if (showAddTodo) {
+      inputRef.current?.focus();
+    } else {
+      if (timeRef.current) {
+        timeRef.current.value = '';
+        timeRef.current?.blur();
+      }
+      if (inputRef.current) {
+        inputRef.current.value = '';
+        inputRef.current?.blur();
+      }
+      setTimeString('');
+      setParsedData(null);
+      setTaskUnderEdit(undefined);
     }
+  }, [setShowAddTodo, setTaskUnderEdit, showAddTodo]);
+
+  const handleTimeInputChange = useCallback((value: string) => {
+    setTimeString(value || '');
 
     try {
-      setParsedData(parseTimeString(timeString));
+      setParsedData(parseTimeString(value));
     } catch {}
-  }, [timeString]);
+  }, []);
 
   const handleSave = useCallback(() => {
     if (!taskUnderEdit) {
+      if (!currentCategoryId) {
+        return;
+      }
+
       addTodo.mutate(
         {
           content: inputRef.current!.value,
@@ -52,12 +75,11 @@ export function AddTodo() {
           categoryId: currentCategoryId,
         },
         {
-          async onSuccess() {
-            inputRef.current?.blur();
-            inputRef.current!.value = '';
+          async onSuccess(data) {
             setTimeString('');
             setParsedData(null);
             await invalidateQueries(['todos.all', { categoryId: currentCategoryId }]);
+            setTaskToFocus(data);
             setShowAddTodo(false);
           },
         }
@@ -77,13 +99,25 @@ export function AddTodo() {
             setParsedData(null);
             setTaskUnderEdit(undefined);
             inputRef.current!.value = '';
-            await invalidateQueries(['todos.all', { categoryId: currentCategoryId }]);
+            if (currentCategoryId) {
+              await invalidateQueries(['todos.all', { categoryId: currentCategoryId }]);
+            }
             setShowAddTodo(false);
           },
         }
       );
     }
-  }, [addTodo, invalidateQueries, parsedData, setTaskUnderEdit, taskUnderEdit, updateTodo]);
+  }, [
+    addTodo,
+    currentCategoryId,
+    invalidateQueries,
+    parsedData,
+    setShowAddTodo,
+    setTaskToFocus,
+    setTaskUnderEdit,
+    taskUnderEdit,
+    updateTodo,
+  ]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     if (e.shiftKey) {
@@ -95,27 +129,27 @@ export function AddTodo() {
     }
 
     if (e.key === 'Escape') {
-      e.currentTarget.blur();
-      setTimeString('');
-      setParsedData(null);
-      setTaskUnderEdit(undefined);
       setShowAddTodo(false);
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
     }
   };
 
-  useHotkeys('i', event => {
-    setShowAddTodo(true);
-    inputRef.current?.focus();
-    event.preventDefault();
-  });
+  useHotkeys(
+    'i',
+    event => {
+      if (!currentCategoryId) {
+        return;
+      }
+
+      setShowAddTodo(true);
+      event.preventDefault();
+    },
+    [currentCategoryId]
+  );
 
   return (
     <div
       className={classNames(
-        `modal-box flex flex-col bg-base-300 shadow-xl p-4 w-full fixed w-[50%] top-[15vh] space-y-3`,
+        `modal-box flex flex-col bg-base-300 shadow-xl p-4 w-full fixed max-w-[30rem] top-[15vh] space-y-3`,
         {
           'right-[-2000px] top-[5vh]': !showAddTodo,
         }
@@ -128,14 +162,18 @@ export function AddTodo() {
         type="text"
         value={timeString}
         disabled={addTodo.isLoading}
-        onChange={e => setTimeString(e.target.value)}
+        onChange={e => handleTimeInputChange(e.target.value)}
         onKeyDown={handleKeyDown}
       />
-      {parsedData?.[0]?.format('YYYY/MM/DD HH:mm')} {parsedData?.[0]?.fromNow()}
-      {parsedData?.[1]?.map((e, i) => (
-        <span key={i}>{e.value}</span>
-      ))}
-      {addTodo.isLoading && <span>adding...</span>}
+      <div className="flex flex-col">
+        {parsedData?.[0]?.format('dddd HH:mm')} ({parsedData?.[0]?.fromNow()})
+        {parsedData?.[1]?.map((e, i) => (
+          <span key={i}>{e.value}</span>
+        ))}
+      </div>
+      <button className="btn" onClick={handleSave}>
+        Save
+      </button>
     </div>
   );
 }

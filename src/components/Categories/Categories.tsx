@@ -2,29 +2,26 @@ import classNames from 'classnames';
 import { trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
 import shallow from 'zustand/shallow';
+import { useEffect } from 'react';
 
 export function Categories(): JSX.Element | null {
-  const { showAddCategory, toggleAddCategory, currentCategoryId, setCurrentCategoryId } = useAppStore(
-    state => ({
-      showAddCategory: state.showAddCategory,
-      toggleAddCategory: state.toggleAddCategory,
-      currentCategoryId: state.currentCategoryId,
-      setCurrentCategoryId: state.setCurrentCategoryId,
-    }),
+  const [showAddCategory, toggleAddCategory, currentCategoryId, setCurrentCategoryId] = useAppStore(
+    state => [state.showAddCategory, state.toggleAddCategory, state.currentCategoryId, state.setCurrentCategoryId],
     shallow
   );
+
   const categories = trpc.useQuery(['categories.all'], {
-    cacheTime: 0,
+    cacheTime: Infinity,
   });
+
+  useEffect(() => {
+    if (categories.data && categories.data[0]) {
+      setCurrentCategoryId(categories.data[0].id);
+    }
+  }, [categories.data, setCurrentCategoryId]);
 
   return (
     <div className="flex w-full space-x-4 mb-4 text-lg">
-      <div
-        onClick={() => setCurrentCategoryId(undefined)}
-        className={classNames('cursor-pointer', { 'font-bold': !currentCategoryId })}
-      >
-        Uncategorized
-      </div>
       {categories.data?.map(c => (
         <div
           className={classNames('cursor-pointer', {
@@ -36,7 +33,7 @@ export function Categories(): JSX.Element | null {
           {c.title}
         </div>
       ))}
-      {!categories.isLoading && categories.data && categories.data?.length < 2 && (
+      {!categories.isLoading && categories.data && (
         <div onClick={toggleAddCategory}>{showAddCategory ? '(-)' : '(+)'}</div>
       )}
     </div>

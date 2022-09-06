@@ -1,7 +1,11 @@
 import moment, { Moment } from 'moment';
 import timestring from 'timestring';
 
-export function parseTimeString(input?: string) {
+export function parseTimeString(input?: string): [Moment | null, Array<Token>] {
+  if (!input) {
+    return [null, []];
+  }
+
   return parseTimeStringHelper(moment(), input);
 }
 

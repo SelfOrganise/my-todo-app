@@ -4,6 +4,9 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
 import { TodoItem } from './TodoItem';
+import shallow from 'zustand/shallow';
+import { AddTodoButton } from '../AddTodoButton';
+import { AddTodoDialog } from '../AddTodo';
 
 export function TodoList() {
   const lastCompleted = useRef<Array<string>>([]);
@@ -12,13 +15,18 @@ export function TodoList() {
   const completeTask = trpc.useMutation(['todos.complete']);
   const undoTask = trpc.useMutation(['todos.undo']);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchText, setSearchText] = useState('');
-  const setTaskUnderEdit = useAppStore(state => state.setTaskUnderEdit);
-  const currentCategoryId = useAppStore(state => state.currentCategoryId);
+  const { setTaskUnderEdit, currentCategoryId, setTaskToFocus, taskToFocus } = useAppStore(
+    state => ({
+      setTaskUnderEdit: state.setTaskUnderEdit,
+      currentCategoryId: state.currentCategoryId,
+      setTaskToFocus: state.setTaskToFocus,
+      taskToFocus: state.taskToFocus,
+    }),
+    shallow
+  );
   const [hideTodos, setHideTodos] = useState(false);
 
-  const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategoryId }], {
+  const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategoryId || '' }], {
     refetchInterval: 60000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: 'always',
@@ -26,52 +34,47 @@ export function TodoList() {
 
   const todos = todosQuery.data;
 
-  const currentTodos = useMemo(() => {
-    const sortedTodos = sortTodos(todos);
-    return searchText.length > 0 ? sortedTodos?.filter(e => e.content.includes(searchText)) : sortedTodos;
-  }, [searchText, todos]);
+  const sortedTodos = useMemo(() => sortTodos(todos), [todos]);
 
+  // onload
   useEffect(() => {
     listContainerRef.current?.focus();
   }, []);
 
-  useHotkeys(
-    'j',
-    () => setSelectedIndex(old => Math.min(currentTodos?.length ? currentTodos.length - 1 : 0, old + 1)),
-    [currentTodos?.length]
-  );
-  useHotkeys('k', () => setSelectedIndex(old => Math.max(0, old - 1)), []);
-  useHotkeys('h', () => setHideTodos(old => !old));
-  useHotkeys('g', () => setSelectedIndex(0));
-  useHotkeys('shift+g', () => setSelectedIndex(currentTodos?.length ? currentTodos.length - 1 : 0), [
-    currentTodos?.length,
+  // focus last created task
+  useEffect(() => {
+    if (!taskToFocus || !sortedTodos) {
+      return;
+    }
+
+    const index = sortedTodos.findIndex(t => t.id === taskToFocus.id);
+    setTaskToFocus(undefined);
+    setSelectedIndex(index);
+  }, [sortedTodos, setTaskToFocus, taskToFocus]);
+
+  useHotkeys('j', () => setSelectedIndex(old => Math.min(sortedTodos?.length ? sortedTodos.length - 1 : 0, old + 1)), [
+    sortedTodos?.length,
   ]);
-  useHotkeys('/', event => {
-    setShowSearch(true);
-    event.preventDefault();
-  });
-  useHotkeys(
-    'escape',
-    () => {
-      setShowSearch(false);
-      setSearchText('');
-    },
-    { enableOnTags: ['INPUT'] }
-  );
+  useHotkeys('k', () => setSelectedIndex(old => Math.max(0, old - 1)), []);
+  useHotkeys('m', () => setHideTodos(old => !old));
+  useHotkeys('g', () => setSelectedIndex(0));
+  useHotkeys('shift+g', () => setSelectedIndex(sortedTodos?.length ? sortedTodos.length - 1 : 0), [
+    sortedTodos?.length,
+  ]);
   useHotkeys(
     'c',
     () =>
-      !!currentTodos?.[selectedIndex]?.id &&
+      !!sortedTodos?.[selectedIndex]?.id &&
       completeTask.mutate(
-        { id: currentTodos[selectedIndex]!.id },
+        { id: sortedTodos[selectedIndex]!.id },
         {
           onSuccess: async () => {
-            lastCompleted.current.push(currentTodos[selectedIndex]!.id);
+            lastCompleted.current.push(sortedTodos[selectedIndex]!.id);
             await invalidateQueries(['todos.all']);
           },
         }
       ),
-    [currentTodos, selectedIndex]
+    [sortedTodos, selectedIndex]
   );
   useHotkeys(
     'u',
@@ -86,12 +89,12 @@ export function TodoList() {
           }
         );
     },
-    [currentTodos, selectedIndex]
+    [sortedTodos, selectedIndex]
   );
   useHotkeys(
     'e',
     event => {
-      const task = currentTodos && currentTodos[selectedIndex];
+      const task = sortedTodos && sortedTodos[selectedIndex];
       if (!task) {
         return;
       }
@@ -99,24 +102,17 @@ export function TodoList() {
       setTaskUnderEdit(task);
       event.preventDefault();
     },
-    [currentTodos, selectedIndex, setTaskUnderEdit]
+    [sortedTodos, selectedIndex, setTaskUnderEdit]
   );
 
   return (
     <>
-      {showSearch && (
-        <input
-          autoFocus={true}
-          className="input mb-4"
-          type="text"
-          value={searchText}
-          onChange={e => setSearchText(e.currentTarget.value)}
-        />
-      )}
+      <AddTodoDialog />
+      <AddTodoButton />
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
         {hideTodos && <p className="text-white text-5xl">Hidden</p>}
         {!hideTodos &&
-          currentTodos?.map((todo, i) => (
+          sortedTodos?.map((todo, i) => (
             <TodoItem onClick={() => setSelectedIndex(i)} key={todo.id} todo={todo} isSelected={selectedIndex === i} />
           ))}
       </div>
@@ -144,8 +140,8 @@ function sortTodos(todos?: Array<Todo>): Array<Todo> | undefined {
   }
 
   noDueDate.sort((a, b) => a.id.localeCompare(b.id));
-  due.sort((a, b) => b.dueDate!.getTime() - a.dueDate!.getTime());
+  due.sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
   scheduled.sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
 
-  return [...due, ...noDueDate, ...scheduled];
+  return [...due, ...scheduled, ...noDueDate];
 }

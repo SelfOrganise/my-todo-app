@@ -4,14 +4,14 @@ import { createProtectedRouter } from '../protected-router';
 export const todosRouter = createProtectedRouter()
   .query('all', {
     input: z.object({
-      categoryId: z.string().nullish(),
+      categoryId: z.string(),
     }),
     async resolve({ input, ctx }) {
       return await ctx.prisma.todo.findMany({
         where: {
           done: false,
           userId: ctx.session.user.id,
-          categoryId: input.categoryId || null,
+          categoryId: input.categoryId,
         },
         orderBy: {
           dueDate: 'asc',
@@ -22,7 +22,7 @@ export const todosRouter = createProtectedRouter()
   .mutation('add', {
     input: z.object({
       content: z.string(),
-      categoryId: z.string().nullish(),
+      categoryId: z.string(),
       dueDate: z.date().nullish(),
     }),
     async resolve({ input, ctx }) {
@@ -77,6 +77,7 @@ export const todosRouter = createProtectedRouter()
       dueDate: z.date().nullish(),
     }),
     async resolve({ input, ctx }) {
+      console.log('dueDate' + input.dueDate);
       return await ctx.prisma.todo.update({
         where: {
           id: input.id,
@@ -84,7 +85,7 @@ export const todosRouter = createProtectedRouter()
         data: {
           content: input.content,
           modifiedAt: new Date(),
-          dueDate: input.dueDate,
+          dueDate: input.dueDate || null,
         },
       });
     },
