@@ -24,7 +24,7 @@ export function TodoList() {
     }),
     shallow
   );
-  const [hideTodos, setHideTodos] = useState(false);
+  const [hideTodos, setHideTodos] = useState(true);
 
   const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategoryId || '' }], {
     refetchInterval: 60000,
@@ -107,8 +107,8 @@ export function TodoList() {
 
   return (
     <>
-      <AddTodoDialog />
       <AddTodoButton />
+      <AddTodoDialog />
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
         {hideTodos && <p className="text-white text-5xl">Hidden</p>}
         {!hideTodos &&

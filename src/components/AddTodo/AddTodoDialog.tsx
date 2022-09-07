@@ -171,8 +171,11 @@ export function AddTodoDialog() {
           <span key={i}>{e.value}</span>
         ))}
       </div>
-      <button className="btn" onClick={handleSave}>
+      <button className="btn btn-primary" onClick={handleSave}>
         Save
+      </button>
+      <button className="btn" onClick={() => setShowAddTodo(false)}>
+        Close
       </button>
     </div>
   );
