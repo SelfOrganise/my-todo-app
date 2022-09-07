@@ -5,16 +5,41 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy-api:
+  deploy:
     runs-on: ubuntu-latest
-    environment: upcloud
+    environment: hetzner
     steps:
       - uses: actions/checkout@v3
-      - run: ls
-      - run: pwd
-      - run: echo $GITHUB_WORKSPACE
-      - run: sshpass
-      - run: sshpass -p $PASSWORD rsync  -e "ssh -o StrictHostKeyChecking=no" -avzh . $TARGET
-        env:
-          PASSWORD: ${{ secrets.PASSWORD }}
-          TARGET: ${{ secrets.RSYNC_TARGET }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - run: docker build -t ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }} .
+      - run: docker push ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }}
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            podman container kill todo 
+            podman container rm todo
+
+            podman image prune -af
+            podman image pull ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }}
+
+            cd todo
+
+            podman run \
+              --name todo \
+              -p 5000:3000 \
+              --restart unless-stopped \
+              --env "NODE_ENV=production" \
+              --env "DATABASE_URL=file:/db/todo.sqlite" \
+              --env "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" \
+              --env "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" \
+              -d \
+              -v "$(pwd)/db:/db" ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }}
