@@ -41,5 +41,7 @@ jobs:
               --env "DATABASE_URL=file:/db/todo.sqlite" \
               --env "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" \
               --env "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" \
+              --env "ONE_SIGNAL_APP=${{ secrets.ONE_SIGNAL_APP }}" \
+              --env "ONE_SIGNAL_KEY=${{ secrets.ONE_SIGNAL_KEY }}" \
               -d \
               -v "$(pwd)/db:/db" ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }}
