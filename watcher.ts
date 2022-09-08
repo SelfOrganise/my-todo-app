@@ -54,6 +54,8 @@ async function updateLastRunTime() {
   });
 }
 
+console.log('Started watcher 👀');
+
 setInterval(async () => {
   const users = await getUsers();
   if (!users || users.length === 0) return;

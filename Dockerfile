@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+COPY prisma ./prisma
 RUN \
   if [ -f yarn.lock ]; then yarn --frozen-lockfile --ignore-engines; \
   elif [ -f package-lock.json ]; then npm ci; \
@@ -22,7 +23,8 @@ COPY . .
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED 1
-RUN yarn prisma generate; yarn build
+RUN yarn build
+RUN yarn build:notify
 
 # If using npm comment out above and use below instead
 # RUN npm run build
@@ -41,10 +43,13 @@ COPY --from=builder /app/public ./public
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/Dockerfile.sh ./app/Dockerfile.sh
+COPY --from=builder /app/watcher.js ./watcher.js
+COPY --from=builder /app/Dockerfile.sh ./Dockerfile.sh
 
 EXPOSE 3000
 
 ENV PORT 3000
 
-CMD ["Dockerfile.sh"]
+RUN chmod +x Dockerfile.sh
+
+CMD ["sh", "-c", "./Dockerfile.sh"]

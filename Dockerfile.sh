@@ -1,10 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
-yarn prod:notify &
-echo 'executed "yarn prod:notify"';
+node watcher.js &
+echo 'executed "node watcher.js"';
 
-node server &
+node server.js &
 echo 'executed "node server"';
 
-echo 'waiting for jobs to finish...'
-wait (jobs -p)
+echo 'waiting for jobs to finish...';
+wait < <(jobs -p)
+
