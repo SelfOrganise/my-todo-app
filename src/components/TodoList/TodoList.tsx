@@ -110,7 +110,11 @@ export function TodoList() {
       <AddTodoButton />
       <AddTodoDialog />
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
-        {hideTodos && <p className="text-white text-5xl font-mono tracking-wide">Hidden</p>}
+        {hideTodos && (
+          <p onClick={() => setHideTodos(false)} className="text-white text-5xl font-mono tracking-wide cursor-pointer">
+            Hidden
+          </p>
+        )}
         {!hideTodos &&
           sortedTodos?.map((todo, i) => (
             <TodoItem onClick={() => setSelectedIndex(i)} key={todo.id} todo={todo} isSelected={selectedIndex === i} />
@@ -140,7 +144,7 @@ function sortTodos(todos?: Array<Todo>): Array<Todo> | undefined {
   }
 
   noDueDate.sort((a, b) => a.id.localeCompare(b.id));
-  due.sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
+  due.sort((a, b) => b.dueDate!.getTime() - a.dueDate!.getTime());
   scheduled.sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
 
   return [...due, ...scheduled, ...noDueDate];

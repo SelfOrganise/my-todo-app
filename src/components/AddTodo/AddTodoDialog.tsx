@@ -6,6 +6,7 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { useAppStore } from '../../store/appStore';
 import { parseTimeString, Token } from './parsetimeString';
 import shallow from 'zustand/shallow';
+import { Todo } from '@prisma/client';
 
 export function AddTodoDialog() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -63,28 +64,28 @@ export function AddTodoDialog() {
   }, []);
 
   const handleSave = useCallback(() => {
+    if (!currentCategoryId || !inputRef.current?.value.trim()) {
+      setShowAddTodo(false);
+      return;
+    }
+
+    const mutateOptions = {
+      async onSuccess(data: Todo) {
+        await invalidateQueries(['todos.all', { categoryId: currentCategoryId }]);
+        setTaskToFocus(data);
+        setShowAddTodo(false);
+      },
+    };
+
     // create new todo
     if (!taskUnderEdit) {
-      if (!currentCategoryId || !inputRef.current?.value.trim()) {
-        setShowAddTodo(false);
-        return;
-      }
-
       addTodo.mutate(
         {
           content: inputRef.current!.value,
           dueDate: parsedData?.[0]?.toDate(),
           categoryId: currentCategoryId,
         },
-        {
-          async onSuccess(data) {
-            setTimeString('');
-            setParsedData(null);
-            await invalidateQueries(['todos.all', { categoryId: currentCategoryId }]);
-            setTaskToFocus(data);
-            setShowAddTodo(false);
-          },
-        }
+        mutateOptions
       );
       // update existing todo
     } else {
@@ -94,20 +95,7 @@ export function AddTodoDialog() {
           content: inputRef.current!.value,
           dueDate: parsedData?.[0]?.toDate(),
         },
-        {
-          async onSuccess() {
-            inputRef.current?.blur();
-            timeRef.current?.blur();
-            setTimeString('');
-            setParsedData(null);
-            setTaskUnderEdit(undefined);
-            inputRef.current!.value = '';
-            if (currentCategoryId) {
-              await invalidateQueries(['todos.all', { categoryId: currentCategoryId }]);
-            }
-            setShowAddTodo(false);
-          },
-        }
+        mutateOptions
       );
     }
   }, [
@@ -117,7 +105,6 @@ export function AddTodoDialog() {
     parsedData,
     setShowAddTodo,
     setTaskToFocus,
-    setTaskUnderEdit,
     taskUnderEdit,
     updateTodo,
   ]);
@@ -158,7 +145,7 @@ export function AddTodoDialog() {
         }
       )}
     >
-      <textarea className="textarea h-40 text-2xl" ref={inputRef} onKeyDown={handleKeyDown} />
+      <textarea className="textarea h-40 text-xl" ref={inputRef} onKeyDown={handleKeyDown} />
       <input
         ref={timeRef}
         className="input"
@@ -169,7 +156,7 @@ export function AddTodoDialog() {
         onKeyDown={handleKeyDown}
       />
       <div className="flex flex-col">
-        {parsedData?.[0]?.format('dddd HH:mm')} ({parsedData?.[0]?.fromNow()})
+        {parsedData?.[0]?.format('dddd HH:mm')} {parsedData?.[0]?.fromNow()}
         {parsedData?.[1]?.map((e, i) => (
           <span key={i}>{e.value}</span>
         ))}
