@@ -56,7 +56,7 @@ export function TodoList() {
     sortedTodos?.length,
   ]);
   useHotkeys('k', () => setSelectedIndex(old => Math.max(0, old - 1)), []);
-  useHotkeys('m', () => setHideTodos(old => !old));
+  useHotkeys('`', () => setHideTodos(old => !old));
   useHotkeys('g', () => setSelectedIndex(0));
   useHotkeys('shift+g', () => setSelectedIndex(sortedTodos?.length ? sortedTodos.length - 1 : 0), [
     sortedTodos?.length,
@@ -110,7 +110,7 @@ export function TodoList() {
       <AddTodoButton />
       <AddTodoDialog />
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
-        {hideTodos && <p className="text-white text-5xl">Hidden</p>}
+        {hideTodos && <p className="text-white text-5xl font-mono tracking-wide">Hidden</p>}
         {!hideTodos &&
           sortedTodos?.map((todo, i) => (
             <TodoItem onClick={() => setSelectedIndex(i)} key={todo.id} todo={todo} isSelected={selectedIndex === i} />

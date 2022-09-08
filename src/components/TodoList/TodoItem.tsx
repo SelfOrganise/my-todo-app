@@ -23,7 +23,6 @@ export function TodoItem({ todo, isSelected, onClick }: TodoItemProps): JSX.Elem
   const [firstLine, restOfContent] = useMemo(() => {
     const lines = todo.content?.split('\n');
     if (lines.length > 1) {
-      debugger;
       return [lines[0] + '\n', lines.slice(1).join('\n')];
     }
 

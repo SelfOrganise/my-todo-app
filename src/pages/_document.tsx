@@ -45,7 +45,7 @@ export default function Document() {
           }}
         ></script>
       </Head>
-      <body className="dark bg-gray-800 h-[100vh]">
+      <body className="dark bg-base-100 h-[100vh]">
         <Main />
         <NextScript />
       </body>

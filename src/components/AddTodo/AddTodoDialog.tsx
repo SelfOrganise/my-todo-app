@@ -63,8 +63,10 @@ export function AddTodoDialog() {
   }, []);
 
   const handleSave = useCallback(() => {
+    // create new todo
     if (!taskUnderEdit) {
-      if (!currentCategoryId) {
+      if (!currentCategoryId || !inputRef.current?.value.trim()) {
+        setShowAddTodo(false);
         return;
       }
 
@@ -84,6 +86,7 @@ export function AddTodoDialog() {
           },
         }
       );
+      // update existing todo
     } else {
       updateTodo.mutate(
         {

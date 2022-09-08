@@ -24,7 +24,7 @@ export function Categories(): JSX.Element | null {
     <div className="flex w-full space-x-4 mb-4 text-lg">
       {categories.data?.map(c => (
         <div
-          className={classNames('cursor-pointer', {
+          className={classNames('cursor-pointer font-serif tracking-wide', {
             'font-bold': c.id === currentCategoryId,
           })}
           onClick={() => setCurrentCategoryId(c.id)}
