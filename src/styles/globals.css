@@ -1,3 +1,5 @@
+@import url('./react-search-select.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,3 +7,4 @@
 body {
   font-family: 'Roboto Slab', serif;
 }
+

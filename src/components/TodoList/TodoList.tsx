@@ -52,6 +52,10 @@ export function TodoList() {
     setSelectedIndex(index);
   }, [sortedTodos, setTaskToFocus, taskToFocus]);
 
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [currentCategoryId]);
+
   useHotkeys('j', () => setSelectedIndex(old => Math.min(sortedTodos?.length ? sortedTodos.length - 1 : 0, old + 1)), [
     sortedTodos?.length,
   ]);

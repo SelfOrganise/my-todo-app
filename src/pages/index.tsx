@@ -1,6 +1,6 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import { TodoList, Categories } from '../components';
+import { TodoList, CategoryPicker } from '../components';
 import { AddCategory } from '../components/Categories/AddCategory';
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
@@ -30,7 +30,7 @@ const Home: NextPage = () => {
       </Head>
 
       <main className="container mx-auto flex flex-col items-center justify-center p-4 max-w-4xl">
-        <Categories />
+        <CategoryPicker />
         <AddCategory />
         <TodoList />
       </main>
