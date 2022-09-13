@@ -14,7 +14,7 @@ export function AddCategory(): JSX.Element | null {
 
   return (
     <form
-      className="flex flex-col fixed w-80 top-[10%] bg-gray-700 rounded p-2 space-y-2"
+      className="flex flex-col absolute w-80 right-0 top-10 bg-gray-700 rounded p-2 space-y-2 z-50"
       onSubmit={(form: FormEvent<HTMLFormElement & { title: HTMLInputElement }>) => {
         addCategory.mutateAsync(
           {
