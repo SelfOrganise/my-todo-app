@@ -1,6 +1,7 @@
 import create from 'zustand';
 import type { Todo } from '@prisma/client';
 import produce from 'immer';
+import { Category } from '@prisma/client';
 
 export interface AppStore {
   showAddTodo?: boolean;
@@ -9,8 +10,8 @@ export interface AppStore {
   taskUnderEdit?: Todo;
   setTaskUnderEdit: (task?: Todo) => void;
 
-  currentCategoryId?: string;
-  setCurrentCategoryId: (categoryId?: string) => void;
+  currentCategory?: Category;
+  setCurrentCategory: (category?: Category) => void;
 
   taskToFocus?: Todo;
   setTaskToFocus: (todo?: Todo) => void;
@@ -39,10 +40,10 @@ export const useAppStore = create<AppStore>(set => ({
         state.showAddCategory = !state.showAddCategory;
       })
     ),
-  setCurrentCategoryId: (categoryId?: string) =>
+  setCurrentCategory: (category?: Category) =>
     set(
       produce(state => {
-        state.currentCategoryId = categoryId;
+        state.currentCategory = category;
       })
     ),
   setTaskToFocus: (todo?: Todo) =>
