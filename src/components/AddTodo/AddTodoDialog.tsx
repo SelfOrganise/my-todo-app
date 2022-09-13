@@ -20,7 +20,7 @@ export function AddTodoDialog() {
     state => [state.taskUnderEdit, state.setTaskUnderEdit, state.setTaskToFocus],
     shallow
   );
-  const currentCategoryId = useAppStore(state => state.currentCategoryId);
+  const currentCategory = useAppStore(state => state.currentCategory);
   const [showAddTodo, setShowAddTodo] = useAppStore(store => [store.showAddTodo, store.setShowAddTodo], shallow);
 
   useEffect(() => {
@@ -64,14 +64,14 @@ export function AddTodoDialog() {
   }, []);
 
   const handleSave = useCallback(() => {
-    if (!currentCategoryId || !inputRef.current?.value.trim()) {
+    if (!currentCategory || !inputRef.current?.value.trim()) {
       setShowAddTodo(false);
       return;
     }
 
     const mutateOptions = {
       async onSuccess(data: Todo) {
-        await invalidateQueries(['todos.all', { categoryId: currentCategoryId }]);
+        await invalidateQueries(['todos.all', { categoryId: currentCategory.id }]);
         setTaskToFocus(data);
         setShowAddTodo(false);
       },
@@ -83,7 +83,7 @@ export function AddTodoDialog() {
         {
           content: inputRef.current!.value,
           dueDate: parsedData?.[0]?.toDate(),
-          categoryId: currentCategoryId,
+          categoryId: currentCategory.id,
         },
         mutateOptions
       );
@@ -100,7 +100,7 @@ export function AddTodoDialog() {
     }
   }, [
     addTodo,
-    currentCategoryId,
+    currentCategory,
     invalidateQueries,
     parsedData,
     setShowAddTodo,
@@ -126,14 +126,14 @@ export function AddTodoDialog() {
   useHotkeys(
     'i',
     event => {
-      if (!currentCategoryId) {
+      if (!currentCategory) {
         return;
       }
 
       setShowAddTodo(true);
       event.preventDefault();
     },
-    [currentCategoryId]
+    [currentCategory]
   );
 
   return (

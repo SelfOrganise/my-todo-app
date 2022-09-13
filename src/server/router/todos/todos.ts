@@ -77,7 +77,6 @@ export const todosRouter = createProtectedRouter()
       dueDate: z.date().nullish(),
     }),
     async resolve({ input, ctx }) {
-      console.log('dueDate' + input.dueDate);
       return await ctx.prisma.todo.update({
         where: {
           id: input.id,
@@ -86,6 +85,22 @@ export const todosRouter = createProtectedRouter()
           content: input.content,
           modifiedAt: new Date(),
           dueDate: input.dueDate || null,
+        },
+      });
+    },
+  })
+  .mutation('updateCategory', {
+    input: z.object({
+      id: z.string(),
+      categoryId: z.string(),
+    }),
+    async resolve({ input, ctx }) {
+      return await ctx.prisma.todo.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          categoryId: input.categoryId,
         },
       });
     },

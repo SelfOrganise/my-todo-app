@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Todo } from '@prisma/client';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { trpc } from '../../utils/trpc';
@@ -15,18 +15,13 @@ export function TodoList() {
   const completeTask = trpc.useMutation(['todos.complete']);
   const undoTask = trpc.useMutation(['todos.undo']);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const { setTaskUnderEdit, currentCategoryId, setTaskToFocus, taskToFocus } = useAppStore(
-    state => ({
-      setTaskUnderEdit: state.setTaskUnderEdit,
-      currentCategoryId: state.currentCategoryId,
-      setTaskToFocus: state.setTaskToFocus,
-      taskToFocus: state.taskToFocus,
-    }),
+  const [setTaskUnderEdit, currentCategory, setTaskToFocus, taskToFocus] = useAppStore(
+    state => [state.setTaskUnderEdit, state.currentCategory, state.setTaskToFocus, state.taskToFocus],
     shallow
   );
   const [hideTodos, setHideTodos] = useState(true);
 
-  const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategoryId || '' }], {
+  const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategory?.id || '' }], {
     refetchInterval: 60000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: 'always',
@@ -54,7 +49,7 @@ export function TodoList() {
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, [currentCategoryId]);
+  }, [currentCategory]);
 
   useHotkeys('j', () => setSelectedIndex(old => Math.min(sortedTodos?.length ? sortedTodos.length - 1 : 0, old + 1)), [
     sortedTodos?.length,
@@ -109,10 +104,17 @@ export function TodoList() {
     [sortedTodos, selectedIndex, setTaskUnderEdit]
   );
 
+  const handleOnClick = useCallback(
+    (todo: Todo, i: number) => {
+      setSelectedIndex(i);
+      setTaskUnderEdit(todo);
+    },
+    [setTaskUnderEdit]
+  );
+
   return (
     <>
       <AddTodoButton />
-      <AddTodoDialog />
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
         {hideTodos && (
           <p onClick={() => setHideTodos(false)} className="text-white text-5xl font-mono tracking-wide cursor-pointer">
@@ -121,9 +123,15 @@ export function TodoList() {
         )}
         {!hideTodos &&
           sortedTodos?.map((todo, i) => (
-            <TodoItem onClick={() => setSelectedIndex(i)} key={todo.id} todo={todo} isSelected={selectedIndex === i} />
+            <TodoItem
+              onClick={() => handleOnClick(todo, i)}
+              key={todo.id}
+              todo={todo}
+              isSelected={selectedIndex === i}
+            />
           ))}
       </div>
+      <AddTodoDialog />
     </>
   );
 }
