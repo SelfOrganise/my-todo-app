@@ -1,32 +1,39 @@
 import * as OneSignal from 'onesignal-node';
 import { prisma } from './src/server/db/client';
+import moment from 'moment';
 
 const signal = new OneSignal.Client(process.env.ONE_SIGNAL_APP!, process.env.ONE_SIGNAL_KEY!);
 
-async function sendNotification(userIds: Array<string>) {
+async function sendNotification(todo: Awaited<ReturnType<typeof getTodos>>[number]) {
+  const now = moment().format('HH:ss');
   await signal
     .createNotification({
+      chrome_web_icon: 'https://todo.3pounds.cyou/favicon.ico',
       contents: {
-        en: 'You have due todos',
+        en: `${todo.content}
+        Sent at ${now}`,
       },
-      include_external_user_ids: userIds,
+      include_external_user_ids: [todo.user.id],
     })
     .then(async () => {
-      console.log('Notified: ', userIds.join(', '));
-      await updateLastRunTime();
+      console.log(`Notified: ${todo.user.email} - ${todo.id}`);
     })
     .catch(console.error);
 }
 
-async function getUsers() {
+async function getTodos() {
   const lastRunTime = await getLastRunTime();
-  return await prisma.todo.groupBy({
-    by: ['userId'],
+  return await prisma.todo.findMany({
     where: {
       dueDate: {
         lte: new Date(),
         gte: lastRunTime,
       },
+    },
+    select: {
+      id: true,
+      content: true,
+      user: true,
     },
   });
 }
@@ -57,8 +64,12 @@ async function updateLastRunTime() {
 console.log('Started watcher 👀');
 
 setInterval(async () => {
-  const users = await getUsers();
-  if (!users || users.length === 0) return;
+  const todos = await getTodos();
+  if (!todos || todos.length === 0) return;
 
-  await sendNotification(users.map(u => u.userId));
+  for (const todo of todos) {
+    await sendNotification(todo);
+  }
+
+  await updateLastRunTime();
 }, parseInt(process.env.NOTIFICATION_CHECK_INTERVAL!) || 60 * 1000);
