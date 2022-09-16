@@ -1,17 +1,14 @@
 import * as OneSignal from 'onesignal-node';
 import { prisma } from './src/server/db/client';
-import moment from 'moment';
 
 const signal = new OneSignal.Client(process.env.ONE_SIGNAL_APP!, process.env.ONE_SIGNAL_KEY!);
 
 async function sendNotification(todo: Awaited<ReturnType<typeof getTodos>>[number]) {
-  const now = moment().format('HH:ss');
   await signal
     .createNotification({
       chrome_web_icon: 'https://todo.3pounds.cyou/favicon.ico',
       contents: {
-        en: `${todo.content}
-        Sent at ${now}`,
+        en: todo.content,
       },
       include_external_user_ids: [todo.user.id],
     })
