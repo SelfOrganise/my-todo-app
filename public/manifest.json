@@ -10,8 +10,7 @@
   "description": "A todo app",
   "share_target": {
     "action": "/api/share",
-    "method": "POST",
-    "enctype": "application/x-www-form-urlencoded",
+    "method": "GET",
     "params": {
       "title": "name",
       "text": "description",
