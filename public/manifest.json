@@ -9,7 +9,7 @@
   "short_name": "todo",
   "description": "A todo app",
   "share_target": {
-    "action": "/api/share",
+    "action": "/share",
     "method": "GET",
     "params": {
       "title": "name",

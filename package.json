@@ -29,6 +29,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hotkeys-hook": "^3.4.7",
+    "react-onesignal": "^2.0.4",
     "react-query": "3.39.2",
     "sass": "^1.54.9",
     "superjson": "^1.9.1",

@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { TodoList, Categories } from '../components';
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import OneSignal from 'react-onesignal';
 
 const Home: NextPage = () => {
   const session = useSession();
@@ -12,13 +13,7 @@ const Home: NextPage = () => {
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    window.OneSignal.push(function () {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      window.OneSignal.setExternalUserId(session.data?.user?.id);
-    });
+    OneSignal.setExternalUserId(session.data?.user?.id);
   }, [session.data?.user?.id]);
 
   return (

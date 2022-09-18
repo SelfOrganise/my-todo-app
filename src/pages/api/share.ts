@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log(req.query)
+  console.log('body:', req.body);
 
-  res.status(204);
+  res.redirect('/');
 }
