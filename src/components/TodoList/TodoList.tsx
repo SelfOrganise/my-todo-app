@@ -73,7 +73,7 @@ export function TodoList() {
           },
         }
       ),
-    [sortedTodos, selectedIndex]
+    [sortedTodos, selectedIndex, completeTask]
   );
   useHotkeys(
     'u',
@@ -88,7 +88,7 @@ export function TodoList() {
           }
         );
     },
-    [sortedTodos, selectedIndex]
+    [sortedTodos, selectedIndex, undoTask]
   );
   useHotkeys(
     'e',

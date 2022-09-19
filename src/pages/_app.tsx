@@ -10,6 +10,15 @@ import OneSignal from 'react-onesignal';
 
 const isProd = process.env.NODE_ENV === 'production';
 
+function registerNotificationHandler() {
+  OneSignal.addListenerForNotificationOpened((e: any) => {
+    const split = e?.action?.split('@');
+    console.log(e, split);
+    // note: need to re-register after each execution https://github.com/OneSignal/OneSignal-Website-SDK/issues/436
+    registerNotificationHandler();
+  });
+}
+
 const MyApp: AppType = ({ Component, pageProps: { session, ...pageProps } }) => {
   const isInitialized = useRef(false);
   useEffect(() => {
@@ -27,16 +36,10 @@ const MyApp: AppType = ({ Component, pageProps: { session, ...pageProps } }) => 
         allowLocalhostAsSecureOrigin: true,
         subdomainName: isProd ? '' : 'todo-3pounds',
         notifyButton: {
-          enable: true
-        }
+          enable: true,
+        },
       })
-        .then(() => {
-          OneSignal.addListenerForNotificationOpened(e => {
-            console.log(e);
-          });
-
-          return console.log('Registered OneSignalSDKWorker');
-        })
+        .then(registerNotificationHandler)
         .catch(err => console.error('Could not register OneSignalSDKWorker', err));
     }
 
