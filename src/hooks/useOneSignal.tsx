@@ -17,8 +17,8 @@ export function useOneSignal() {
       // note: need to re-register after each execution https://github.com/OneSignal/OneSignal-Website-SDK/issues/436
       registerNotificationHandler();
 
-      const split = e?.action?.split('@');
-      if (split.legnth != 2) {
+      const split: [string, string] = e?.action?.split('@');
+      if (split.length != 2) {
         console.log('Could not process:', e.action);
         return;
       }

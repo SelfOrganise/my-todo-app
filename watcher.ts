@@ -11,6 +11,10 @@ async function sendNotification(todo: Awaited<ReturnType<typeof getTodos>>[numbe
         en: todo.content,
       },
       include_external_user_ids: [todo.user.id],
+      web_buttons: [
+        { id: `snooze@${todo.id}`, text: 'Snooze' },
+        { id: `complete@${todo.id}`, text: 'Complete' },
+      ],
     })
     .then(async () => {
       console.log(`Notified: ${todo.user.email} - ${todo.id}`);
