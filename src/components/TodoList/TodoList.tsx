@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Todo } from '@prisma/client';
-import { useHotkeys } from 'react-hotkeys-hook';
+import useHotkeys from '@reecelucas/react-use-hotkeys';
 import { trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
 import { TodoItem } from './TodoItem';
@@ -59,33 +61,46 @@ export function TodoList() {
     setSelectedIndex(0);
   }, [currentCategory]);
 
-  useHotkeys('j', () => setSelectedIndex(old => Math.min(sortedTodos?.length ? sortedTodos.length - 1 : 0, old + 1)), [
-    sortedTodos?.length,
-  ]);
-  useHotkeys('k', () => setSelectedIndex(old => Math.max(0, old - 1)), []);
+  useHotkeys(
+    'j',
+    useCallback(
+      () => setSelectedIndex(old => Math.min(sortedTodos?.length ? sortedTodos.length - 1 : 0, old + 1)),
+      [sortedTodos?.length]
+    )
+  );
+  useHotkeys(
+    'k',
+    useCallback(() => setSelectedIndex(old => Math.max(0, old - 1)), [])
+  );
   useHotkeys('`', () => setHideTodos(old => !old));
-  useHotkeys('g', () => setSelectedIndex(0));
-  useHotkeys('shift+g', () => setSelectedIndex(sortedTodos?.length ? sortedTodos.length - 1 : 0), [
-    sortedTodos?.length,
-  ]);
+  useHotkeys(
+    'g g',
+    useCallback(() => setSelectedIndex(0), [])
+  );
+  useHotkeys(
+    'shift+g',
+    useCallback(() => setSelectedIndex(sortedTodos?.length ? sortedTodos.length - 1 : 0), [sortedTodos?.length])
+  );
   useHotkeys(
     'c',
-    () =>
-      !!sortedTodos?.[selectedIndex]?.id &&
-      completeTask.mutate(
-        { id: sortedTodos[selectedIndex]!.id },
-        {
-          onSuccess: async () => {
-            lastCompleted.current.push(sortedTodos[selectedIndex]!.id);
-            await invalidateQueries(['todos.all']);
-          },
-        }
-      ),
-    [sortedTodos, selectedIndex, completeTask]
+    useCallback(
+      () =>
+        !!sortedTodos?.[selectedIndex]?.id &&
+        completeTask.mutate(
+          { id: sortedTodos[selectedIndex]!.id },
+          {
+            onSuccess: async () => {
+              lastCompleted.current.push(sortedTodos[selectedIndex]!.id);
+              await invalidateQueries(['todos.all']);
+            },
+          }
+        ),
+      [sortedTodos, selectedIndex, completeTask, invalidateQueries]
+    )
   );
   useHotkeys(
     'u',
-    () => {
+    useCallback(() => {
       lastCompleted.current.length &&
         undoTask.mutate(
           { id: lastCompleted.current.pop()! },
@@ -95,41 +110,45 @@ export function TodoList() {
             },
           }
         );
-    },
-    [sortedTodos, selectedIndex, undoTask]
+    }, [undoTask, invalidateQueries])
   );
   useHotkeys(
     'e',
-    event => {
-      const task = sortedTodos && sortedTodos[selectedIndex];
-      if (!task) {
-        return;
-      }
+    useCallback(
+      event => {
+        const task = sortedTodos && sortedTodos[selectedIndex];
+        if (!task) {
+          return;
+        }
 
-      setTaskUnderEdit(task);
-      setShowAddTodo(true);
-      event.preventDefault();
-    },
-    [sortedTodos, selectedIndex, setTaskUnderEdit]
+        setTaskUnderEdit(task);
+        setShowAddTodo(true);
+        event.preventDefault();
+      },
+      [sortedTodos, selectedIndex, setTaskUnderEdit]
+    )
   );
 
   useHotkeys(
     'i',
-    event => {
-      if (!currentCategory) {
-        return;
-      }
+    useCallback(
+      event => {
+        if (!currentCategory) {
+          return;
+        }
 
-      setShowAddTodo(true);
-      event.preventDefault();
-    },
-    [currentCategory]
+        setShowAddTodo(true);
+        event.preventDefault();
+      },
+      [currentCategory]
+    )
   );
 
   const handleOnClick = useCallback(
     (todo: Todo, i: number) => {
       setSelectedIndex(i);
       setTaskUnderEdit(todo);
+      setShowAddTodo(true);
     },
     [setTaskUnderEdit]
   );

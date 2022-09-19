@@ -1,7 +1,10 @@
+import useHotkeys from '@reecelucas/react-use-hotkeys';
 import { useRouter } from 'next/router';
 
 export default function Share(): JSX.Element {
   const router = useRouter();
+
+  useHotkeys('g g', () => console.log('yes'));
 
   console.log(router);
 

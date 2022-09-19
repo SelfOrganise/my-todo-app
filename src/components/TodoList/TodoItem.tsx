@@ -3,9 +3,9 @@ import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Category, Todo } from '@prisma/client';
 import { CategoryPicker } from '../Categories';
-import { useHotkeys } from 'react-hotkeys-hook';
 import { trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
+import useHotkeys from '@reecelucas/react-use-hotkeys';
 
 interface TodoItemProps {
   todo: Todo;
@@ -65,12 +65,12 @@ export function TodoItem({ todo, isSelected, onClick }: TodoItemProps): JSX.Elem
   );
 
   useHotkeys(
-    'm',
+    // todo: feature request to disable hotkeys, lol
+    isSelected ? 'm' : 'asfjsafjalkfjalkjfakljflak',
     event => {
       event.preventDefault();
       setShowCategoryPicker(true);
     },
-    { enabled: isSelected }
   );
 
   const contentClassNames = classNames({

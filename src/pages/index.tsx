@@ -1,6 +1,6 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import { TodoList, Categories } from '../components';
+import { TodoList, Sidebar } from '../components';
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import OneSignal from 'react-onesignal';
@@ -24,19 +24,18 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="container mx-auto flex flex-col items-center justify-center p-4 max-w-4xl">
+      <Sidebar>
         <Toaster
           toastOptions={{
             style: {
               background: '#333',
               color: '#fff',
-              fontSize: '12px'
+              fontSize: '12px',
             },
           }}
         />
-        <Categories />
         <TodoList />
-      </main>
+      </Sidebar>
     </>
   );
 };
