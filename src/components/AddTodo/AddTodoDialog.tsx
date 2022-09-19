@@ -1,4 +1,4 @@
-import React, { ReactEventHandler, SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
+import React, { SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import moment, { Moment } from 'moment/moment';
 import { trpc } from '../../utils/trpc';
@@ -23,10 +23,24 @@ export function AddTodoDialog() {
   );
   const [currentCategory, setCurrentCategory] = useState<Category>();
   const [showAddTodo, setShowAddTodo] = useAppStore(store => [store.showAddTodo, store.setShowAddTodo], shallow);
-  const router = useRouter();
   const categories = trpc.useQuery(['categories.all'], {
     cacheTime: Infinity,
   });
+  const router = useRouter();
+
+  const showDialog = useCallback(() => {
+    setShowAddTodo(true);
+    inputRef.current?.focus();
+  }, [setShowAddTodo]);
+
+  useEffect(() => {
+    if (inputRef.current && (router.query.title || router.query.text || router.query.url)) {
+      inputRef.current.value = `${router.query.title || ''}\n${router.query.text || ''}\n${
+        router.query.url || ''
+      }`.trim();
+      showDialog();
+    }
+  }, [router.query.text, router.query.title, router.query.url, setShowAddTodo, showAddTodo, showDialog]);
 
   const globalCategory = useAppStore(state => state.currentCategory);
   useEffect(() => {
@@ -35,13 +49,9 @@ export function AddTodoDialog() {
     }
   }, [currentCategory, globalCategory]);
 
-  // useEffect(() => {
-  //   if (router.query.name || router.query.description || router.query.)
-  // }, [router.query]);
-
   useEffect(() => {
     if (taskUnderEdit && inputRef.current) {
-      setShowAddTodo(true);
+      showDialog();
       inputRef.current.value = taskUnderEdit.content;
       if (taskUnderEdit.dueDate) {
         const date = moment(taskUnderEdit.dueDate);
@@ -50,26 +60,22 @@ export function AddTodoDialog() {
         setParsedData([date, []]);
       }
     }
-  }, [setShowAddTodo, taskUnderEdit]);
+  }, [setShowAddTodo, showDialog, taskUnderEdit]);
 
-  // focus on show, clear on hide
-  useEffect(() => {
-    if (showAddTodo) {
-      inputRef.current?.focus();
-    } else {
-      if (timeRef.current) {
-        timeRef.current.value = '';
-        timeRef.current?.blur();
-      }
-      if (inputRef.current) {
-        inputRef.current.value = '';
-        inputRef.current?.blur();
-      }
-      setTimeString('');
-      setParsedData(null);
-      setTaskUnderEdit(undefined);
+  const hideDialog = useCallback(() => {
+    setShowAddTodo(false);
+    if (timeRef.current) {
+      timeRef.current.value = '';
+      timeRef.current?.blur();
     }
-  }, [setShowAddTodo, setTaskUnderEdit, showAddTodo]);
+    if (inputRef.current) {
+      inputRef.current.value = '';
+      inputRef.current?.blur();
+    }
+    setTimeString('');
+    setParsedData(null);
+    setTaskUnderEdit(undefined);
+  }, [setShowAddTodo, setTaskUnderEdit]);
 
   const handleTimeInputChange = useCallback((value: string) => {
     setTimeString(value || '');
@@ -92,7 +98,7 @@ export function AddTodoDialog() {
 
   const handleSave = useCallback(() => {
     if (!currentCategory || !inputRef.current?.value.trim()) {
-      setShowAddTodo(false);
+      hideDialog();
       return;
     }
 
@@ -100,7 +106,9 @@ export function AddTodoDialog() {
       async onSuccess(data: Todo) {
         await invalidateQueries(['todos.all', { categoryId: currentCategory.id }]);
         setTaskToFocus(data);
-        setShowAddTodo(false);
+        router.replace('/').then(() => {
+          hideDialog();
+        });
       },
     };
 
@@ -128,9 +136,10 @@ export function AddTodoDialog() {
   }, [
     addTodo,
     currentCategory,
+    hideDialog,
     invalidateQueries,
     parsedData,
-    setShowAddTodo,
+    router,
     setTaskToFocus,
     taskUnderEdit,
     updateTodo,
@@ -146,7 +155,7 @@ export function AddTodoDialog() {
     }
 
     if (e.key === 'Escape') {
-      setShowAddTodo(false);
+      router.replace('/').then(() => hideDialog());
     }
   };
 
@@ -157,11 +166,20 @@ export function AddTodoDialog() {
         return;
       }
 
-      setShowAddTodo(true);
+      showDialog();
       event.preventDefault();
     },
-    [currentCategory]
+    [currentCategory, showDialog]
   );
+
+  const handleClose = useCallback(() => {
+    router.replace('/').then(() => {
+      hideDialog();
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
+    });
+  }, [hideDialog, router]);
 
   return (
     <div
@@ -189,13 +207,15 @@ export function AddTodoDialog() {
         ))}
       </div>
       <div className="flex flex-row justify-between">
-        <button className="btn" onClick={() => setShowAddTodo(false)}>
+        <button className="btn" onClick={handleClose}>
           Close
         </button>
         {categories.data && currentCategory?.id && (
           <select className="select" value={currentCategory.id} onChange={handleCategoryChange}>
             {categories.data.map(c => (
-              <option key={c.id} value={c.id}>{c.title}</option>
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
             ))}
           </select>
         )}
