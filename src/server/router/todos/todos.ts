@@ -1,3 +1,4 @@
+import moment from 'moment';
 import { z } from 'zod';
 import { createProtectedRouter } from '../protected-router';
 
@@ -49,6 +50,27 @@ export const todosRouter = createProtectedRouter()
           done: true,
           modifiedAt: new Date(),
           doneAt: new Date(),
+        },
+      });
+    },
+  })
+  .mutation('snooze', {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ input, ctx }) {
+      const todo = await ctx.prisma.todo.findUniqueOrThrow({
+        where: {
+          id: input.id,
+        },
+      });
+
+      return await ctx.prisma.todo.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          dueDate: moment(todo.dueDate).add(1, 'h').toDate(),
         },
       });
     },

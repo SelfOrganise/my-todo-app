@@ -8,6 +8,7 @@ import { parseTimeString, Token } from './parsetimeString';
 import shallow from 'zustand/shallow';
 import { Category, Todo } from '@prisma/client';
 import { useRouter } from 'next/router';
+import toast from 'react-hot-toast';
 
 export function AddTodoDialog() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -112,9 +113,11 @@ export function AddTodoDialog() {
       },
     };
 
+    let promise = null;
+
     // create new todo
     if (!taskUnderEdit) {
-      addTodo.mutate(
+      promise = addTodo.mutateAsync(
         {
           content: inputRef.current!.value,
           dueDate: parsedData?.[0]?.toDate(),
@@ -124,7 +127,7 @@ export function AddTodoDialog() {
       );
       // update existing todo
     } else {
-      updateTodo.mutate(
+      promise = updateTodo.mutateAsync(
         {
           id: taskUnderEdit.id,
           content: inputRef.current!.value,
@@ -133,6 +136,12 @@ export function AddTodoDialog() {
         mutateOptions
       );
     }
+
+    toast.promise(promise, {
+      loading: 'Saving...',
+      success: <b>Todo saved!</b>,
+      error: <b>Could not save.</b>,
+    });
   }, [
     addTodo,
     currentCategory,

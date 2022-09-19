@@ -4,6 +4,7 @@ import { TodoList, Categories } from '../components';
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import OneSignal from 'react-onesignal';
+import { Toaster } from 'react-hot-toast';
 
 const Home: NextPage = () => {
   const session = useSession();
@@ -24,6 +25,15 @@ const Home: NextPage = () => {
       </Head>
 
       <main className="container mx-auto flex flex-col items-center justify-center p-4 max-w-4xl">
+        <Toaster
+          toastOptions={{
+            style: {
+              background: '#333',
+              color: '#fff',
+              fontSize: '12px'
+            },
+          }}
+        />
         <Categories />
         <TodoList />
       </main>
