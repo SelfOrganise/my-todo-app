@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { ReactEventHandler, SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import moment, { Moment } from 'moment/moment';
 import { trpc } from '../../utils/trpc';
@@ -6,7 +6,8 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { useAppStore } from '../../store/appStore';
 import { parseTimeString, Token } from './parsetimeString';
 import shallow from 'zustand/shallow';
-import { Todo } from '@prisma/client';
+import { Category, Todo } from '@prisma/client';
+import { useRouter } from 'next/router';
 
 export function AddTodoDialog() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -20,8 +21,23 @@ export function AddTodoDialog() {
     state => [state.taskUnderEdit, state.setTaskUnderEdit, state.setTaskToFocus],
     shallow
   );
-  const currentCategory = useAppStore(state => state.currentCategory);
+  const [currentCategory, setCurrentCategory] = useState<Category>();
   const [showAddTodo, setShowAddTodo] = useAppStore(store => [store.showAddTodo, store.setShowAddTodo], shallow);
+  const router = useRouter();
+  const categories = trpc.useQuery(['categories.all'], {
+    cacheTime: Infinity,
+  });
+
+  const globalCategory = useAppStore(state => state.currentCategory);
+  useEffect(() => {
+    if (globalCategory && !currentCategory) {
+      setCurrentCategory(globalCategory);
+    }
+  }, [currentCategory, globalCategory]);
+
+  // useEffect(() => {
+  //   if (router.query.name || router.query.description || router.query.)
+  // }, [router.query]);
 
   useEffect(() => {
     if (taskUnderEdit && inputRef.current) {
@@ -62,6 +78,17 @@ export function AddTodoDialog() {
       setParsedData(parseTimeString(value));
     } catch {}
   }, []);
+
+  const handleCategoryChange = useCallback(
+    (e: SyntheticEvent<HTMLSelectElement>) => {
+      const category = categories.data?.find(c => c.id === e?.currentTarget?.value);
+
+      if (category) {
+        setCurrentCategory(category);
+      }
+    },
+    [categories.data]
+  );
 
   const handleSave = useCallback(() => {
     if (!currentCategory || !inputRef.current?.value.trim()) {
@@ -161,12 +188,21 @@ export function AddTodoDialog() {
           <span key={i}>{e.value}</span>
         ))}
       </div>
-      <button className="btn btn-primary" onClick={handleSave}>
-        Save
-      </button>
-      <button className="btn" onClick={() => setShowAddTodo(false)}>
-        Close
-      </button>
+      <div className="flex flex-row justify-between">
+        <button className="btn" onClick={() => setShowAddTodo(false)}>
+          Close
+        </button>
+        {categories.data && currentCategory?.id && (
+          <select className="select" value={currentCategory.id} onChange={handleCategoryChange}>
+            {categories.data.map(c => (
+              <option key={c.id} value={c.id}>{c.title}</option>
+            ))}
+          </select>
+        )}
+        <button className="btn btn-primary" onClick={handleSave}>
+          Save
+        </button>
+      </div>
     </div>
   );
 }
