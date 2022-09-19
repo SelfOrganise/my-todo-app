@@ -2,8 +2,6 @@ import { useAppStore } from '../../store/appStore';
 import shallow from 'zustand/shallow';
 import { trpc } from '../../utils/trpc';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { useHotkeys } from 'react-hotkeys-hook';
-import { AddCategory } from './AddCategory';
 import { CategoryPicker } from './CategoryPicker';
 
 export function Categories(): JSX.Element | null {
@@ -24,10 +22,10 @@ export function Categories(): JSX.Element | null {
     }
   }, [categories.data, currentCategory, setCurrentCategory]);
 
-  useHotkeys('/', event => {
-    event.preventDefault();
-    ref.current?.focus();
-  });
+  // useHotkeys('/', event => {
+  //   event.preventDefault();
+  //   ref.current?.focus();
+  // });
 
   return (
     <div className="flex w-full justify-between mb-2">
@@ -36,10 +34,6 @@ export function Categories(): JSX.Element | null {
         value={currentCategory}
         onSelected={useCallback(c => setCurrentCategory(c), [setCurrentCategory])}
       />
-      {!categories.isLoading && categories.data && (
-        <div onClick={toggleAddCategory}>{showAddCategory ? '(-)' : '(+)'}</div>
-      )}
-      <AddCategory />
     </div>
   );
 }

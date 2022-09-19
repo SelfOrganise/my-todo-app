@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Todo } from '@prisma/client';
-import { useHotkeys } from 'react-hotkeys-hook';
+import useHotkeys from '@reecelucas/react-use-hotkeys';
 import { trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
 import { TodoItem } from './TodoItem';
 import shallow from 'zustand/shallow';
-import { AddTodoButton } from '../AddTodoButton';
 import { AddTodoDialog } from '../AddTodo';
+import { useRouter } from 'next/router';
 
 export function TodoList() {
   const lastCompleted = useRef<Array<string>>([]);
@@ -15,11 +15,12 @@ export function TodoList() {
   const completeTask = trpc.useMutation(['todos.complete']);
   const undoTask = trpc.useMutation(['todos.undo']);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [setTaskUnderEdit, currentCategory, setTaskToFocus, taskToFocus] = useAppStore(
-    state => [state.setTaskUnderEdit, state.currentCategory, state.setTaskToFocus, state.taskToFocus],
-    shallow
-  );
+  const [showAddTodo, setShowAddTodo] = useState(false);
+  const [taskUnderEdit, setTaskUnderEdit] = useState<Todo | undefined>();
+  const [taskToFocus, setTaskToFocus] = useState<Todo | undefined>();
+  const [currentCategory] = useAppStore(state => [state.currentCategory], shallow);
   const [hideTodos, setHideTodos] = useState(true);
+  const router = useRouter();
 
   const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategory?.id || '' }], {
     refetchInterval: 60000,
@@ -30,6 +31,13 @@ export function TodoList() {
   const todos = todosQuery.data;
 
   const sortedTodos = useMemo(() => sortTodos(todos), [todos]);
+
+  // todo: find better way to handle this
+  useEffect(() => {
+    if (router.query.title || router.query.text || router.query.url) {
+      setShowAddTodo(true);
+    }
+  }, [router.query.text, router.query.title, router.query.url]);
 
   // onload
   useEffect(() => {
@@ -51,33 +59,46 @@ export function TodoList() {
     setSelectedIndex(0);
   }, [currentCategory]);
 
-  useHotkeys('j', () => setSelectedIndex(old => Math.min(sortedTodos?.length ? sortedTodos.length - 1 : 0, old + 1)), [
-    sortedTodos?.length,
-  ]);
-  useHotkeys('k', () => setSelectedIndex(old => Math.max(0, old - 1)), []);
+  useHotkeys(
+    'j',
+    useCallback(
+      () => setSelectedIndex(old => Math.min(sortedTodos?.length ? sortedTodos.length - 1 : 0, old + 1)),
+      [sortedTodos?.length]
+    )
+  );
+  useHotkeys(
+    'k',
+    useCallback(() => setSelectedIndex(old => Math.max(0, old - 1)), [])
+  );
   useHotkeys('`', () => setHideTodos(old => !old));
-  useHotkeys('g', () => setSelectedIndex(0));
-  useHotkeys('shift+g', () => setSelectedIndex(sortedTodos?.length ? sortedTodos.length - 1 : 0), [
-    sortedTodos?.length,
-  ]);
+  useHotkeys(
+    'g g',
+    useCallback(() => setSelectedIndex(0), [])
+  );
+  useHotkeys(
+    'shift+g',
+    useCallback(() => setSelectedIndex(sortedTodos?.length ? sortedTodos.length - 1 : 0), [sortedTodos?.length])
+  );
   useHotkeys(
     'c',
-    () =>
-      !!sortedTodos?.[selectedIndex]?.id &&
-      completeTask.mutate(
-        { id: sortedTodos[selectedIndex]!.id },
-        {
-          onSuccess: async () => {
-            lastCompleted.current.push(sortedTodos[selectedIndex]!.id);
-            await invalidateQueries(['todos.all']);
-          },
-        }
-      ),
-    [sortedTodos, selectedIndex, completeTask]
+    useCallback(
+      () =>
+        !!sortedTodos?.[selectedIndex]?.id &&
+        completeTask.mutate(
+          { id: sortedTodos[selectedIndex]!.id },
+          {
+            onSuccess: async () => {
+              lastCompleted.current.push(sortedTodos[selectedIndex]!.id);
+              await invalidateQueries(['todos.all']);
+            },
+          }
+        ),
+      [sortedTodos, selectedIndex, completeTask, invalidateQueries]
+    )
   );
   useHotkeys(
     'u',
-    () => {
+    useCallback(() => {
       lastCompleted.current.length &&
         undoTask.mutate(
           { id: lastCompleted.current.pop()! },
@@ -87,21 +108,38 @@ export function TodoList() {
             },
           }
         );
-    },
-    [sortedTodos, selectedIndex, undoTask]
+    }, [undoTask, invalidateQueries])
   );
   useHotkeys(
     'e',
-    event => {
-      const task = sortedTodos && sortedTodos[selectedIndex];
-      if (!task) {
-        return;
-      }
+    useCallback(
+      event => {
+        const task = sortedTodos && sortedTodos[selectedIndex];
+        if (!task) {
+          return;
+        }
 
-      setTaskUnderEdit(task);
-      event.preventDefault();
-    },
-    [sortedTodos, selectedIndex, setTaskUnderEdit]
+        setTaskUnderEdit(task);
+        setShowAddTodo(true);
+        event.preventDefault();
+      },
+      [sortedTodos, selectedIndex, setTaskUnderEdit]
+    )
+  );
+
+  useHotkeys(
+    'i',
+    useCallback(
+      event => {
+        if (!currentCategory) {
+          return;
+        }
+
+        setShowAddTodo(true);
+        event.preventDefault();
+      },
+      [currentCategory]
+    )
   );
 
   const handleOnClick = useCallback(
@@ -114,7 +152,9 @@ export function TodoList() {
 
   return (
     <>
-      <AddTodoButton />
+      <button className="btn fixed bottom-[2rem] w-36" onClick={() => setShowAddTodo(!showAddTodo)}>
+        {showAddTodo ? 'Close' : 'Add'}
+      </button>
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
         {hideTodos && (
           <p onClick={() => setHideTodos(false)} className="text-white text-5xl font-mono tracking-wide cursor-pointer">
@@ -131,7 +171,16 @@ export function TodoList() {
             />
           ))}
       </div>
-      <AddTodoDialog />
+      {showAddTodo && (
+        <AddTodoDialog
+          task={taskUnderEdit}
+          onClose={todo => {
+            setTaskToFocus(todo);
+            setTaskUnderEdit(undefined);
+            return setShowAddTodo(false);
+          }}
+        />
+      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import * as OneSignal from 'onesignal-node';
 import { prisma } from './src/server/db/client';
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const signal = new OneSignal.Client(process.env.ONE_SIGNAL_APP!, process.env.ONE_SIGNAL_KEY!);
 
 async function sendNotification(todo: Awaited<ReturnType<typeof getTodos>>[number]) {
@@ -73,4 +74,5 @@ setInterval(async () => {
   }
 
   await updateLastRunTime();
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 }, parseInt(process.env.NOTIFICATION_CHECK_INTERVAL!) || 60 * 1000);
