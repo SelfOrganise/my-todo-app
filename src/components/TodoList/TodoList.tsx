@@ -5,8 +5,8 @@ import { trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
 import { TodoItem } from './TodoItem';
 import shallow from 'zustand/shallow';
-import { AddTodoButton } from '../AddTodoButton';
 import { AddTodoDialog } from '../AddTodo';
+import { useRouter } from 'next/router';
 
 export function TodoList() {
   const lastCompleted = useRef<Array<string>>([]);
@@ -15,11 +15,12 @@ export function TodoList() {
   const completeTask = trpc.useMutation(['todos.complete']);
   const undoTask = trpc.useMutation(['todos.undo']);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [setTaskUnderEdit, currentCategory, setTaskToFocus, taskToFocus] = useAppStore(
-    state => [state.setTaskUnderEdit, state.currentCategory, state.setTaskToFocus, state.taskToFocus],
-    shallow
-  );
+  const [showAddTodo, setShowAddTodo] = useState(false);
+  const [taskUnderEdit, setTaskUnderEdit] = useState<Todo | undefined>();
+  const [taskToFocus, setTaskToFocus] = useState<Todo | undefined>();
+  const [currentCategory] = useAppStore(state => [state.currentCategory], shallow);
   const [hideTodos, setHideTodos] = useState(true);
+  const router = useRouter();
 
   const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategory?.id || '' }], {
     refetchInterval: 60000,
@@ -30,6 +31,13 @@ export function TodoList() {
   const todos = todosQuery.data;
 
   const sortedTodos = useMemo(() => sortTodos(todos), [todos]);
+
+  // todo: find better way to handle this
+  useEffect(() => {
+    if (router.query.title || router.query.text || router.query.url) {
+      setShowAddTodo(true);
+    }
+  }, [router.query.text, router.query.title, router.query.url]);
 
   // onload
   useEffect(() => {
@@ -99,9 +107,23 @@ export function TodoList() {
       }
 
       setTaskUnderEdit(task);
+      setShowAddTodo(true);
       event.preventDefault();
     },
     [sortedTodos, selectedIndex, setTaskUnderEdit]
+  );
+
+  useHotkeys(
+    'i',
+    event => {
+      if (!currentCategory) {
+        return;
+      }
+
+      setShowAddTodo(true);
+      event.preventDefault();
+    },
+    [currentCategory]
   );
 
   const handleOnClick = useCallback(
@@ -114,7 +136,9 @@ export function TodoList() {
 
   return (
     <>
-      <AddTodoButton />
+      <button className="btn fixed bottom-[2rem] w-36" onClick={() => setShowAddTodo(!showAddTodo)}>
+        {showAddTodo ? 'Close' : 'Add'}
+      </button>
       <div ref={listContainerRef} className="outline-amber-200:focus border-2:focus border-amber-400:focus w-full">
         {hideTodos && (
           <p onClick={() => setHideTodos(false)} className="text-white text-5xl font-mono tracking-wide cursor-pointer">
@@ -131,7 +155,16 @@ export function TodoList() {
             />
           ))}
       </div>
-      <AddTodoDialog />
+      {showAddTodo && (
+        <AddTodoDialog
+          task={taskUnderEdit}
+          onClose={todo => {
+            setTaskToFocus(todo);
+            setTaskUnderEdit(undefined);
+            return setShowAddTodo(false);
+          }}
+        />
+      )}
     </>
   );
 }
