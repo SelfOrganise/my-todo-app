@@ -65,12 +65,14 @@ export function TodoItem({ todo, isSelected, onClick }: TodoItemProps): JSX.Elem
   );
 
   useHotkeys(
-    // todo: feature request to disable hotkeys, lol
-    isSelected ? 'm' : 'asfjsafjalkfjalkjfakljflak',
+    'm',
     event => {
       event.preventDefault();
       setShowCategoryPicker(true);
     },
+    {
+      enabled: isSelected
+    }
   );
 
   const contentClassNames = classNames({
