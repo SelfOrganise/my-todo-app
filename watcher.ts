@@ -8,6 +8,7 @@ async function sendNotification(todo: Awaited<ReturnType<typeof getTodos>>[numbe
   await signal
     .createNotification({
       chrome_web_icon: 'https://todo.3pounds.cyou/favicon.ico',
+      headings: { 'en': todo.category.title },
       contents: {
         en: todo.content,
       },
@@ -36,6 +37,7 @@ async function getTodos() {
       id: true,
       content: true,
       user: true,
+      category: true,
     },
   });
 }
