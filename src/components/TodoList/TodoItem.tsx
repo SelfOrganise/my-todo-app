@@ -1,14 +1,14 @@
 import classNames from 'classnames';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Category, Todo } from '@prisma/client';
+import { Category } from '@prisma/client';
 import { CategoryPicker } from '../Categories';
-import { trpc } from '../../utils/trpc';
+import { inferQueryOutput, trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
 import useHotkeys from '@reecelucas/react-use-hotkeys';
 
 interface TodoItemProps {
-  todo: Todo;
+  todo: inferQueryOutput<'todos.all'>[number];
   isSelected: boolean;
   onClick?: () => void;
 }
@@ -71,7 +71,7 @@ export function TodoItem({ todo, isSelected, onClick }: TodoItemProps): JSX.Elem
       setShowCategoryPicker(true);
     },
     {
-      enabled: isSelected
+      enabled: isSelected,
     }
   );
 
@@ -120,6 +120,7 @@ export function TodoItem({ todo, isSelected, onClick }: TodoItemProps): JSX.Elem
       <div className="whitespace-pre text-xs h-full tracking-tight">
         {todo.dueDate && <div className="italic text-gray-500">{parsedDueDate.fromNow()}</div>}
       </div>
+      {!currentCategory && <span>{todo.category.title}</span>}
     </div>
   );
 }

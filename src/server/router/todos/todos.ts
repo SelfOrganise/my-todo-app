@@ -5,7 +5,7 @@ import { createProtectedRouter } from '../protected-router';
 export const todosRouter = createProtectedRouter()
   .query('all', {
     input: z.object({
-      categoryId: z.string(),
+      categoryId: z.string().optional(),
     }),
     async resolve({ input, ctx }) {
       return await ctx.prisma.todo.findMany({
@@ -13,6 +13,17 @@ export const todosRouter = createProtectedRouter()
           done: false,
           userId: ctx.session.user.id,
           categoryId: input.categoryId,
+        },
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          dueDate: true,
+          userId: true,
+          done: true,
+          doneAt: true,
+          category: true,
+          categoryId: true,
         },
         orderBy: {
           dueDate: 'asc',

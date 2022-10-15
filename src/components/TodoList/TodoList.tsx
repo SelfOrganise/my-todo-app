@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Todo } from '@prisma/client';
 import useHotkeys from '@reecelucas/react-use-hotkeys';
-import { trpc } from '../../utils/trpc';
+import { inferQueryOutput, trpc } from '../../utils/trpc';
 import { useAppStore } from '../../store/appStore';
 import { TodoItem } from './TodoItem';
 import shallow from 'zustand/shallow';
@@ -24,7 +24,7 @@ export function TodoList() {
   const [hideTodos, setHideTodos] = useState(true);
   const router = useRouter();
 
-  const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategory?.id || '' }], {
+  const todosQuery = trpc.useQuery(['todos.all', { categoryId: currentCategory?.id }], {
     refetchInterval: 60000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: 'always',
@@ -145,7 +145,7 @@ export function TodoList() {
   );
 
   const handleOnClick = useCallback(
-    (todo: Todo, i: number) => {
+    (todo: inferQueryOutput<'todos.all'>[number], i: number) => {
       setSelectedIndex(i);
       setTaskUnderEdit(todo);
       setShowAddTodo(true);
@@ -188,7 +188,7 @@ export function TodoList() {
   );
 }
 
-function sortTodos(todos?: Array<Todo>): Array<Todo> | undefined {
+function sortTodos(todos?: Array<inferQueryOutput<'todos.all'>[number]>): inferQueryOutput<'todos.all'> | undefined {
   if (!todos) {
     return todos;
   }

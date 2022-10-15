@@ -1,10 +1,10 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import { TodoList, Sidebar } from '../components';
+import { TodoList } from '../components';
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import OneSignal from 'react-onesignal';
-import { Toaster } from 'react-hot-toast';
+import { MainLayout } from '../components/layouts';
 
 const Home: NextPage = () => {
   const session = useSession();
@@ -24,18 +24,9 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Sidebar>
-        <Toaster
-          toastOptions={{
-            style: {
-              background: '#333',
-              color: '#fff',
-              fontSize: '12px',
-            },
-          }}
-        />
+      <MainLayout>
         <TodoList />
-      </Sidebar>
+      </MainLayout>
     </>
   );
 };

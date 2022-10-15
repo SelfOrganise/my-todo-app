@@ -1,6 +1,7 @@
 import useHotkeys from '@reecelucas/react-use-hotkeys';
 import classNames from 'classnames';
-import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import { useCallback, useState } from 'react';
 import shallow from 'zustand/shallow';
 import { useAppStore } from '../../store/appStore';
 import { trpc } from '../../utils/trpc';
@@ -8,6 +9,7 @@ import { AddCategory } from './AddCategory';
 
 export function Sidebar({ children }: React.PropsWithChildren<unknown>): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
+  const { query, isReady, push } = useRouter();
   const categories = trpc.useQuery(['categories.all'], {
     cacheTime: Infinity,
   });
@@ -37,10 +39,10 @@ export function Sidebar({ children }: React.PropsWithChildren<unknown>): JSX.Ele
         const index = categories.data?.findIndex(c => c === currentCategory) || 0;
         const next = categories.data?.[index + 1];
         if (next) {
-          setCurrentCategory(next);
+          push(`/todos/${next.title}`);
         }
       },
-      [categories.data, currentCategory, setCurrentCategory]
+      [categories.data, currentCategory, push]
     )
   );
 
@@ -52,19 +54,12 @@ export function Sidebar({ children }: React.PropsWithChildren<unknown>): JSX.Ele
         const index = categories.data?.findIndex(c => c === currentCategory) || 0;
         const next = categories.data?.[index - 1];
         if (next) {
-          setCurrentCategory(next);
+          push(`/todos/${next.title}`);
         }
       },
-      [categories.data, currentCategory, setCurrentCategory]
+      [categories.data, currentCategory, push]
     )
   );
-
-  // set initial category on page load
-  useEffect(() => {
-    if (!currentCategory && categories.data && categories.data[0]) {
-      setCurrentCategory(categories.data[0]);
-    }
-  }, [categories.data, currentCategory, setCurrentCategory]);
 
   return (
     <div className="drawer">
@@ -94,12 +89,23 @@ export function Sidebar({ children }: React.PropsWithChildren<unknown>): JSX.Ele
       <div className="drawer-side">
         <label htmlFor="sidebarDrawer" className="drawer-overlay" onClick={() => setIsOpen(false)}></label>
         <ul className="menu p-4 overflow-y-auto w-80 bg-base-100 text-base-content">
+          <li
+            className={classNames({ bordered: isReady && !query.category })}
+            onClick={() => {
+              setIsOpen(false);
+              setCurrentCategory(undefined);
+              push('/todos');
+            }}
+          >
+            <a>All</a>
+          </li>
+          <div>-----</div>
           <AddCategory />
           {categories.data?.map(c => (
             <li
               onClick={() => {
                 setIsOpen(false);
-                setCurrentCategory(c);
+                push(`/todos/${c.title}`);
               }}
               className={classNames({ bordered: c.id === currentCategory?.id })}
               key={c.id}

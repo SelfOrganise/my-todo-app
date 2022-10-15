@@ -24,7 +24,7 @@ export const authOptions: NextAuthOptions = {
     colorScheme: 'dark',
   },
   session: {
-    maxAge: 3600, // token will expire after 1 hour
+    maxAge: 604800, // token will expire after 1 week
   },
   callbacks: {
     async jwt({ token }) {
