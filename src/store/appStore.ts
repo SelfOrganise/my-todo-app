@@ -1,6 +1,6 @@
 import create from 'zustand';
 import type { Todo } from '@prisma/client';
-import produce from 'immer';
+import { produce } from 'immer';
 import { Category } from '@prisma/client';
 
 export interface AppStore {

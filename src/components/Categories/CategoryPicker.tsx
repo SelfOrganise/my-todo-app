@@ -3,8 +3,6 @@ import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo
 import classNames from 'classnames';
 import { Category } from '@prisma/client';
 import { createPopper } from '@popperjs/core';
-import { Simulate } from 'react-dom/test-utils';
-import input = Simulate.input;
 
 interface CategoryPickerProps {
   value: Category | undefined;

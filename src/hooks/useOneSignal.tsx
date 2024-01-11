@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import OneSignal from 'react-onesignal';
@@ -13,7 +15,7 @@ export function useOneSignal() {
 
   // register notification action handler
   const registerNotificationHandler = useCallback(() => {
-    OneSignal.addListenerForNotificationOpened((e: any) => {
+    OneSignal.Notifications.addEventListener('click', (e: any) => {
       // note: need to re-register after each execution https://github.com/OneSignal/OneSignal-Website-SDK/issues/436
       registerNotificationHandler();
 
