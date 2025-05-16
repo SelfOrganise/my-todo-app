@@ -22,8 +22,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - run: docker build -t ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }} .
-      - run: docker push ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }}
+      - run: docker build -t ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }} ${{ secrets.DOCKER_IMAGE_NAME }}:latest .
+      - run: docker push ${{ secrets.DOCKER_IMAGE_NAME }} --all-tags
       - name: executing remote ssh commands using password
         uses: appleboy/ssh-action@v0.1.5
         with:
@@ -32,24 +32,4 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            podman container kill ${{ env.appName }} 
-            podman container rm ${{ env.appName }}
-
-            podman image prune -af
-            podman image pull ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }}
-
-            mkdir -p ${{ env.appName }}
-            cd ${{ env.appName }}
-
-            podman run \
-              --name ${{ env.appName }} \
-              -p 5000:3000 \
-              --restart unless-stopped \
-              --env "NODE_ENV=production" \
-              --env "DATABASE_URL=file:/db/${{ env.appName }}.sqlite" \
-              --env "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" \
-              --env "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" \
-              --env "ONE_SIGNAL_APP=${{ secrets.ONE_SIGNAL_APP }}" \
-              --env "ONE_SIGNAL_KEY=${{ secrets.ONE_SIGNAL_KEY }}" \
-              -d \
-              -v "$(pwd)/db:/db" ${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.run_number }}
+            podman auto-update
